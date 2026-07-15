@@ -1,41 +1,41 @@
-# Jogosultsági modell
+# Jogosultsagi modell
 
-A projekt induló szerepkörei:
+A projekt indulo szerepkorei:
 
 ## admin
 
-Teljes rendszeradminisztrátori szerep.
+Teljes rendszeradminisztratori szerep.
 
-- Cégek létrehozása, szerkesztése, inaktiválása.
-- Partner profilok létrehozása és céghez rendelése.
-- Minden álláshirdetés kezelése.
-- Minden jelentkezés és feltöltött fájl megtekintése.
-- E-mail naplók és rendszerállapot ellenőrzése.
-- Később: audit logok, riportok, jogosultságkezelés.
+- Cegek letrehozasa, szerkesztese, inaktivalasa.
+- Partner profilok letrehozasa es ceghez rendelese.
+- Minden allashirdetes kezelese.
+- Minden jelentkezes es feltoltott fajl megtekintese.
+- E-mail naplok es rendszerallapot ellenorzese.
+- Kesobb: audit logok, riportok, jogosultsagkezeles.
 
 ## partner
 
-Céghez kötött felhasználó.
+Ceghez kotott felhasznalo.
 
-- Csak a saját `company_id` alá tartozó állások kezelése.
-- Csak a saját cég állásaira érkezett jelentkezések megtekintése.
-- Jelentkezések státuszának frissítése.
-- Saját céghez tartozó e-mail naplók olvasása.
-- Nem fér hozzá más cégek adataihoz, felhasználóihoz vagy rendszeradmin beállításokhoz.
+- Csak a sajat `company_id` ala tartozo allasok kezelese.
+- Csak a sajat ceg allasaira erkezett jelentkezesek megtekintese.
+- Jelentkezesek statuszanak frissitese.
+- Sajat ceghez tartozo e-mail naplok olvasasa.
+- Nem fer hozza mas cegek adataihoz, felhasznaloihoz vagy rendszeradmin beallitasokhoz.
 
 ## Technikai alap
 
-- A Supabase Auth kezeli a bejelentkezést.
-- A `profiles` tábla köti össze az `auth.users` rekordot a szerepkörrel és opcionálisan a céggel.
-- Az `admin` szerephez nem kötelező `company_id`.
-- A `partner` szerephez kötelező `company_id`.
-- A migration RLS policy-kat tartalmaz az admin és partner hozzáférések első védelmi rétegéhez.
-- A service role kulcsot csak szerveroldali kódban szabad használni, kliensoldalra soha nem kerülhet.
+- A Supabase Auth kezeli a bejelentkezest.
+- A `profiles` tabla koti ossze az `auth.users` rekordot a szerepkorrel es opcionalisan a ceggel.
+- Az `admin` szerephez nem kotelezo `company_id`.
+- A `partner` szerephez kotelezo `company_id`.
+- A migration RLS policy-kat tartalmaz az admin es partner hozzaferesek elso vedelmi retegehez.
+- A service role kulcsot csak szerveroldali kodban szabad hasznalni, kliensoldalra soha nem kerulhet.
 
-## Ajánlott következő lépések
+## Kovetkezo lepesek
 
-1. Supabase Auth e-mail login bekapcsolása.
-2. Admin bootstrap folyamat létrehozása, amely az első admin profilt service role-lal hozza létre.
-3. Partner meghívási folyamat kialakítása.
-4. Admin és partner route guard middleware bevezetése.
-5. Jelentkezéskezelési audit log hozzáadása státuszváltásokhoz.
+1. Supabase Auth e-mail login bekapcsolasa.
+2. Admin bootstrap folyamat letrehozasa, amely az elso admin profilt service role-lal hozza letre.
+3. Partner meghivasi folyamat kialakitasa.
+4. Admin es partner route guard middleware bevezetese.
+5. Jelentkezeskezelesi audit log hozzaadasa statuszvaltasokhoz.

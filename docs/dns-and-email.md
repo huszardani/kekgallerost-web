@@ -1,77 +1,78 @@
-# DNS és e-mail beállítások
+# DNS es e-mail beallitasok
 
 Domain: `kekgallerost.hu`
 
-Ez a fájl a később kézzel beállítandó DNS rekordokat írja le. A pontos értékeket mindig az adott szolgáltató felülete adja meg, ezért itt a rekordtípusok és célok szerepelnek.
+Ez a fajl a kezzel beallitando DNS rekordokat irja le. A pontos ertekeket mindig az adott szolgaltato felulete adja meg.
 
 ## Vercel domain
 
 Vercel projekt neve: `kekgallerost-web`
 
-Ajánlott beállítás:
+A jelenlegi ellenorzes szerint ezek elerhetok:
 
-| Host | Típus | Érték | Cél |
+- `https://kekgallerost-web.vercel.app`
+- `https://kekgallerost.hu`
+- `https://www.kekgallerost.hu`
+
+Altalanos rekordok:
+
+| Host | Tipus | Ertek | Cel |
 | --- | --- | --- | --- |
-| `@` | `A` | Vercel által megadott apex IP | `https://kekgallerost.hu` |
-| `www` | `CNAME` | Vercel által megadott cél, tipikusan `cname.vercel-dns.com` | `https://www.kekgallerost.hu` |
+| `@` | `A` | Vercel altal megadott apex IP | `https://kekgallerost.hu` |
+| `www` | `CNAME` | Vercel altal megadott cel | `https://www.kekgallerost.hu` |
 
-Vercelben állítsd be:
+Vercelben:
 
 - Primary domain: `kekgallerost.hu`
-- Redirect: `www.kekgallerost.hu` -> `kekgallerost.hu`
+- Redirect: `www.kekgallerost.hu` -> `kekgallerost.hu`, ha ezt szeretnenk elsodlegesnek
 - Environment variable: `NEXT_PUBLIC_SITE_URL=https://kekgallerost.hu`
 
 ## Resend domain verification
 
-Küldő e-mail: `info@kekgallerost.hu`
+Felado: `Kekgalleros.hu <info@kekgallerost.hu>`
 
-Resendben add hozzá a domaint:
+Resend domain: `kekgallerost.hu`
 
-- Domain: `kekgallerost.hu`
-- From address: `info@kekgallerost.hu`
+Aktualis DNS ellenorzes szerint a Resend rekordok elerhetok:
 
-A Resend jellemzően ilyen rekordokat kér:
-
-| Host | Típus | Érték | Cél |
-| --- | --- | --- | --- |
-| Resend által megadott DKIM host | `CNAME` vagy `TXT` | Resend által megadott érték | Domain verification és DKIM |
-| opcionális bounce/return-path host | `CNAME` | Resend által megadott érték | jobb kézbesíthetőség |
-
-A pontos DKIM host és value csak a Resend felületén derül ki, ne találjuk ki kézzel.
+- DKIM TXT: `resend._domainkey.kekgallerost.hu`
+- SPF TXT: `send.kekgallerost.hu`
+- MX / Return-Path: `send.kekgallerost.hu`
+- DMARC TXT: `_dmarc.kekgallerost.hu`
 
 ## SPF
 
-Ha a domainen még nincs SPF rekord:
+A Resend kuldeshez jelenleg a `send.kekgallerost.hu` aldomain SPF rekordja van beallitva:
 
-| Host | Típus | Érték |
-| --- | --- | --- |
-| `@` | `TXT` | `v=spf1 include:amazonses.com ~all` |
+```text
+v=spf1 include:amazonses.com ~all
+```
 
-Ha már van SPF rekord, ne hozz létre másodikat. A meglévő rekordba kell beilleszteni a Resend által kért include értéket.
+Ha a root domainen is lesz mas levelezes, ott csak egy SPF rekord lehet; tobb SPF TXT rekord hibat okoz.
 
 ## DKIM
 
-DKIM-et a Resend domain verification adja. A Resend felületéről másold át pontosan a megadott rekordokat.
+DKIM-et a Resend domain verification adja. A teljes DKIM erteket mindig a Resend feluleterol kell masolni.
 
 ## DMARC
 
-Induló, megfigyelő beállítás:
+Indulo, megfigyelo beallitas:
 
-| Host | Típus | Érték |
-| --- | --- | --- |
-| `_dmarc` | `TXT` | `v=DMARC1; p=none; rua=mailto:info@kekgallerost.hu; adkim=s; aspf=s` |
+```text
+v=DMARC1; p=none;
+```
 
-Élesítés után fokozatosan szigorítható:
+Elesites utan fokozatosan szigorithato:
 
 - `p=quarantine`
-- később `p=reject`
+- kesobb `p=reject`
 
-## Ellenőrzés
+## Ellenorzes
 
-DNS módosítás után ellenőrizd:
+DNS modositas utan ellenorizd:
 
-- Vercel domain státusz: Valid / Configured
-- Resend domain státusz: Verified
-- SPF: pontosan egy SPF TXT rekord legyen a root domainen
-- DKIM: minden Resend által kért rekord valid
-- DMARC: `_dmarc.kekgallerost.hu` TXT rekord elérhető
+- Vercel domain statusz: Valid / Configured
+- Resend domain statusz: Verified
+- SPF: pontosan egy SPF rekord legyen az adott hoston
+- DKIM: Resend szerint Verified
+- DMARC: `_dmarc.kekgallerost.hu` TXT rekord elerheto
