@@ -50,11 +50,11 @@ function renderJobs() {
   filteredJobs.forEach((job) => {
     const card = document.createElement("a");
     card.className = "job-tile";
-    card.href = encodeURIComponent(job.slug || job.id) + "/index.html";
+    card.href = `/allasok/${encodeURIComponent(job.slug || job.id)}`;
     card.setAttribute("aria-label", `${job.title} részletei és jelentkezés`);
     card.innerHTML = `
       <div class="job-card-top">
-        <span class="job-logo-pill" aria-label="Kékgallérost.hu"><img src="../assets/logo-mark.png" alt=""></span>
+        <span class="job-logo-pill" aria-label="Kékgallérost.hu"><img src="/assets/logo-mark.png" alt=""></span>
         <span class="pill salary-pill">${job.salary}</span>
       </div>
       <h3>${job.title}</h3>
