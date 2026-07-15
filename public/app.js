@@ -1,0 +1,1 @@
+const f=document.querySelector("#companyForm");const m=document.querySelector("#companyMessage");if(f&&m){f.addEventListener("submit",e=>{if(!f.checkValidity())return;e.preventDefault();m.textContent="Koszonjuk, megkaptuk a briefet.";f.reset();});}

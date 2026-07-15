@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Állás részletei és gyors jelentkezés a Kékgallérost.hu platformon.">
+    <title>Állás részletei | Kékgallérost.hu</title>
+    <link rel="stylesheet" href="../../styles.css">
+  </head>
+  <body class="job-detail-page">
+    <a class="skip-link" href="#application">Ugrás a jelentkezéshez</a>
+
+    <header class="site-header" id="top">
+      <a class="brand" href="../../index.html" aria-label="Kékgallérost.hu főoldal">
+        <span class="brand-logo-frame"><img src="../../assets/logo-mark.png" alt=""></span>
+        <span class="brand-copy"><strong>Kékgallérost.hu</strong><small>állás részletei</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Fő navigáció">
+        <a href="/">Állások</a>
+        <a href="../../index.html#companies">Cégeknek</a>
+        <a href="../../index.html#faq">GYIK</a>
+      </nav>
+      <a class="nav-cta" href="#application">Jelentkezem</a>
+    </header>
+
+    <main>
+      <section class="job-detail-hero" aria-labelledby="detailTitle">
+        <div class="detail-hero-copy">
+          <div class="job-card-top detail-card-top">
+            <span class="job-logo-pill" id="detailCategory" aria-label="Kékgallérost.hu"><img src="../../assets/logo-mark.png" alt=""></span>
+            <span class="pill salary-pill" id="detailSalaryHero"></span>
+          </div>
+          <h1 id="detailTitle">Állás betöltése...</h1>
+          <p class="detail-subtitle" id="detailSubtitle"></p>
+          <dl class="job-facts detail-hero-facts" id="detailHeroFacts"></dl>
+          <ul class="job-highlights detail-hero-highlights" id="detailHeroHighlights"></ul>
+          <div class="detail-actions">
+            <a class="button button-primary" href="#application">Jelentkezem erre a munkára</a>
+            <a class="button button-light" href="#conditions">Megnézem a feltételeket</a>
+          </div>
+        </div>
+        <figure class="job-hero-image">
+          <img id="detailHeroImage" src="../../assets/hero-workers.png" alt="">
+        </figure>
+      </section>
+
+      <section class="section work-image-section" aria-labelledby="workImageTitle">
+        <div class="work-image-layout">
+          <figure class="work-image-frame"><img id="workImage" src="../../assets/hero-workers.png" alt=""></figure>
+          <div class="work-image-copy">
+            <p class="eyebrow">Munkakör röviden</p>
+            <h2 id="workImageTitle">Mit csinál egy fuvarszervező?</h2>
+            <p id="workImageCopy">Röviden: a fuvar, a sofőr, az ügyfél, a járműkapacitás és az időablakok napi összehangolása tartozik hozzád.</p>
+            <ul class="work-insight-list" id="workImagePoints"></ul>
+            <a class="button button-primary" href="#application">Jelentkezem</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section quick-facts-section" aria-labelledby="quickFactsTitle">
+        <div class="section-heading compact-heading">
+          <p class="eyebrow">Gyors döntési adatok</p>
+          <h2 id="quickFactsTitle">Legfontosabb tudnivalók még egyszer</h2>
+          <p>A legfontosabb információk egy helyen, hogy gyorsan el tudd dönteni, érdekel-e.</p>
+        </div>
+        <dl class="quick-facts-grid" id="detailFacts"></dl>
+        <div class="section-cta"><a class="button button-primary" href="#application">Érdekel, jelentkezem</a></div>
+      </section>
+
+      <section class="section fit-section" id="conditions" aria-labelledby="fitTitle">
+        <div class="section-heading compact-heading">
+          <p class="eyebrow">Illeszkedés</p>
+          <h2 id="fitTitle">Neked való lehet, ha...</h2>
+          <p id="fitIntro">Röviden összeszedtük, mikor passzolhat hozzád ez a munka, és mikor érdemes inkább másik állást nézni.</p>
+        </div>
+        <div class="fit-grid">
+          <article class="fit-card fit-positive">
+            <h3>Neked való lehet, ha</h3>
+            <ul id="goodFitList"></ul>
+          </article>
+          <article class="fit-card fit-warning">
+            <h3>Nem biztos, hogy neked való, ha</h3>
+            <ul id="badFitList"></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section tasks-section" aria-labelledby="tasksTitle">
+        <div class="detail-two-column">
+          <article class="detail-panel feature-panel">
+            <p class="eyebrow">Feladatok</p>
+            <h2 id="tasksTitle">Mit fogsz csinálni?</h2>
+            <p class="block-intro" id="tasksIntro">A napi munkádban ezekkel a feladatokkal fogsz találkozni.</p>
+            <ul id="detailTasks"></ul>
+            <div class="section-cta inline-cta"><a class="button button-primary" href="#application">Jelentkezem, ha passzol hozzám</a></div>
+          </article>
+          <figure class="task-image"><img id="taskImage" src="../../assets/hero-workers.png" alt=""></figure>
+        </div>
+      </section>
+
+      <section class="section expectations-section" aria-labelledby="expectationsTitle">
+        <div class="section-heading compact-heading">
+          <p class="eyebrow">Kérünk és adunk</p>
+          <h2 id="expectationsTitle">Amit kérünk és amit adunk</h2>
+        </div>
+        <div class="detail-grid three-panels ask-give-grid">
+          <article class="detail-panel"><h3>Amit kérünk</h3><ul id="detailExpectations"></ul></article>
+          <article class="detail-panel"><h3>Amit adunk</h3><ul id="detailBenefits"></ul></article>
+          <article class="detail-panel"><h3>Előnyt jelent</h3><ul id="detailAdvantages"></ul></article>
+        </div>
+      </section>
+
+      <section class="section process-section" aria-labelledby="processTitle">
+        <div class="section-heading compact-heading">
+          <p class="eyebrow">Jelentkezési folyamat</p>
+          <h2 id="processTitle">Hogyan történik a jelentkezés?</h2>
+        </div>
+        <div class="application-steps">
+          <article><span>1</span><div><strong>Kitöltöd a gyors jelentkezést</strong><p>Megadod az alapadataidat, és válaszolsz néhány, erre a munkára szabott kérdésre.</p></div></article>
+          <article><span>2</span><div><strong>A jelentkezésed bekerül a rendszerbe</strong><p>A munkáltató egy helyen látja az adataidat, válaszaidat és a pozícióhoz kapcsolódó jelentkezésedet.</p></div></article>
+          <article><span>3</span><div><strong>Telefonos egyeztetés következhet</strong><p>Ha a válaszaid alapján szóba jöhetsz, a munkáltató felveheti veled a kapcsolatot.</p></div></article>
+        </div>
+        <p class="process-note">A jelentkezés nem jelent automatikus felvételt. A további egyeztetésről és kiválasztásról a munkáltató dönt.</p>
+        <div class="section-cta"><a class="button button-primary" href="#application">Kitöltöm a jelentkezést</a></div>
+      </section>
+
+      <section class="section mini-faq-section" aria-labelledby="miniFaqTitle">
+        <div class="section-heading compact-heading"><p class="eyebrow">Mini GYIK</p><h2 id="miniFaqTitle">Gyakori kérdések</h2></div>
+        <div class="mini-faq-grid" id="miniFaq"></div>
+      </section>
+
+      <section class="section application-section" id="application" aria-labelledby="applicationTitle">
+        <div class="section-heading">
+          <p class="eyebrow">Jelentkezés</p>
+          <h2 id="applicationTitle">Jelentkezz és változtass</h2>
+          <p>Add meg az adataidat, válaszolj néhány rövid kérdésre, és a jelentkezésed automatikusan ehhez az álláshoz kapcsolódik.</p>
+        </div>
+
+        <form class="application-page-form" id="jobApplicationForm">
+          <input type="hidden" name="jobId" id="formJobId">
+          <input type="hidden" name="jobTitle" id="formJobTitle">
+          <input type="hidden" name="jobSlug" id="formJobSlug">
+
+          <fieldset>
+            <legend>Alapadatok</legend>
+            <div class="application-grid">
+              <label><span>Név</span><input name="name" autocomplete="name" required></label>
+              <label><span>Telefonszám</span><input name="phone" autocomplete="tel" required></label>
+              <label><span>E-mail</span><input type="email" name="email" autocomplete="email" required></label>
+              <label><span>Lakóhely / település</span><input name="city" required></label>
+              <label><span>Mikor tudsz kezdeni?</span><select name="start" required><option value="">Válassz</option><option>Azonnal</option><option>1 héten belül</option><option>2-4 héten belül</option><option>Később egyeztetve</option></select></label>
+              <label><span>Mikor hívhatnak?</span><select name="callTime" required><option value="">Válassz</option><option>Délelőtt</option><option>Délután</option><option>Este</option><option>Bármikor</option></select></label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Általános kérdések</legend>
+            <div class="criteria-grid">
+              <label><span>Van releváns tapasztalatod?</span><select name="hasExperience" required><option value="">Válassz</option><option>Igen</option><option>Nem</option><option>Részben / egyeztetést igényel</option></select></label>
+              <label><span>Megoldható számodra a bejárás?</span><select name="commutePossible" required><option value="">Válassz</option><option>Igen</option><option>Nem</option><option>Egyeztetést igényel</option></select></label>
+              <label><span>Vállalod a megadott munkarendet?</span><select name="scheduleAccepted" required><option value="">Válassz</option><option>Igen</option><option>Nem</option><option>Egyeztetést igényel</option></select></label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Állásspecifikus kérdések</legend>
+            <div class="criteria-grid" id="criteriaQuestions"></div>
+          </fieldset>
+
+          <fieldset>
+            <legend>CV és megjegyzés</legend>
+            <div class="application-grid">
+              <label><span>Önéletrajz feltöltése, ha van (nem kötelező)</span><input type="file" name="cv" accept=".pdf,.doc,.docx"></label>
+              <label><span>Megjegyzés / korábbi munkahelyek röviden</span><textarea name="note" required rows="6" placeholder="Írd le röviden, ami fontos lehet a jelentkezéshez."></textarea></label>
+            </div>
+          </fieldset>
+
+          <label class="consent-line"><input type="checkbox" name="privacyConsent" required><span>Hozzájárulok, hogy a jelentkezési adataimat a kiválasztott munkáltató megkapja.</span></label>
+          <button class="button button-primary" type="submit">Jelentkezés elküldése</button>
+          <div class="success-panel" id="applicationSuccess" role="status" aria-live="polite" hidden><h3>Megkaptuk a jelentkezésed.</h3><p>Rögzítettük az adataidat, az állásazonosítót és a kérdésekre adott válaszaidat. A további egyeztetésről a munkáltató dönt.</p></div>
+        </form>
+      </section>
+    </main>
+
+    <a class="mobile-sticky-apply" href="#application">Jelentkezem</a>
+
+    <footer class="site-footer">
+      <div><a class="brand" href="../../index.html"><span class="brand-logo-frame"><img src="../../assets/logo-mark.png" alt=""></span><span class="brand-copy"><strong>Kékgallérost.hu</strong><small>munka és ember gyorsabban</small></span></a></div>
+      <nav aria-label="Lábléc navigáció"><a href="/">Állások</a><a href="../../index.html#companies">Cégeknek</a><a href="../../index.html#company-request">Ajánlatkérés</a><a href="../../index.html#faq">GYIK</a></nav>
+      <div class="legal-links"><a href="../../jogi-dokumentumok/index.html#adatkezeles">Adatkezelés</a><a href="../../jogi-dokumentumok/index.html#cookie">Cookie tájékoztató</a><a href="../../jogi-dokumentumok/index.html#aszf">ÁSZF</a><a href="../../jogi-dokumentumok/index.html#impresszum">Impresszum</a></div>
+    </footer>
+
+    <script src="../../jobs-data.js"></script>
+    <script src="../reszletek/job-detail.js"></script>
+  </body>
+</html>
