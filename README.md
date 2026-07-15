@@ -1,47 +1,47 @@
 # kekgallerost-web
 
-Kékgallérost.hu webapp alap technikai környezet.
+Kekgallerost.hu webapp alap technikai kornyezet.
 
 - Domain: `kekgallerost.hu`
-- Küldő e-mail: `info@kekgallerost.hu`
+- Kuldo e-mail: `info@kekgallerost.hu`
 - GitHub repo: `kekgallerost-web`
 - Vercel projekt: `kekgallerost-web`
 - Supabase projekt: `kekgallerost`
-- Supabase régió: EU
-- Cél: álláshirdetési és jelentkezéskezelő rendszer admin és partner felülettel
+- Supabase regio: EU
+- Cel: allashirdetesi es jelentkezeskezelo rendszer admin es partner felulettel
 
-## Technológiai alap
+## Technologiai alap
 
 - Next.js App Router
 - TypeScript
-- Supabase Auth, Postgres, Row Level Security és később Storage
-- Resend tranzakciós e-mailekhez
+- Supabase Auth, Postgres, Row Level Security es kesobb Storage
+- Resend tranzakcios e-mailekhez
 - Vercel deploy
 
-## URL struktúra
+## URL struktura
 
-- `/allasok` - publikus álláslista
-- `/allas/[slug]` - publikus állás adatlap és jelentkezés
-- `/admin` - belső admin felület
-- `/partner` - partner felület
+- `/allasok` - publikus allaslista
+- `/allas/[slug]` - publikus allas adatlap es jelentkezes
+- `/admin` - belso admin felulet
+- `/partner` - partner felulet
 
-## Helyi indítás
+## Helyi inditas
 
-1. Függőségek telepítése:
+1. Fuggosegek telepitese:
 
 ```bash
 npm install
 ```
 
-2. Környezeti változók létrehozása:
+2. Kornyezeti valtozok letrehozasa:
 
 ```bash
 cp .env.example .env.local
 ```
 
-3. Töltsd ki a `.env.local` értékeit Supabase és Resend kulcsokkal.
+3. Toltsd ki a `.env.local` ertekeit Supabase es Resend kulcsokkal.
 
-4. Fejlesztői szerver:
+4. Fejlesztoi szerver:
 
 ```bash
 npm run dev
@@ -53,7 +53,7 @@ npm run dev
 http://localhost:3000
 ```
 
-## Környezeti változók
+## Kornyezeti valtozok
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
@@ -66,99 +66,88 @@ NEXT_PUBLIC_SITE_URL=https://kekgallerost.hu
 
 Fontos:
 
-- `NEXT_PUBLIC_*` változók kliensoldalra is kikerülhetnek.
-- `SUPABASE_SERVICE_ROLE_KEY` és `RESEND_API_KEY` csak szerveroldalon használható.
-- Éles kulcsot ne commitolj.
+- `NEXT_PUBLIC_*` valtozok kliensoldalra is kikerulhetnek.
+- `SUPABASE_SERVICE_ROLE_KEY` es `RESEND_API_KEY` csak szerveroldalon hasznalhato.
+- Eles kulcsot ne commitolj.
 
-## Supabase induló setup
+## Supabase setup
 
-1. Hozz létre új Supabase projektet:
-
-```text
-Name: kekgallerost
-Region: EU
-```
-
+1. Supabase projekt: `kekgallerost`, EU regio.
 2. A Supabase SQL Editorban futtasd:
 
 ```text
 supabase/migrations/202607150001_initial_schema.sql
 ```
 
-3. Kapcsold be a szükséges Auth provider(eke)t. Induláshoz elég az e-mail login.
-
-4. Hozd létre az első admin profilt service role-lal vagy SQL-ből egy meglévő `auth.users` rekordhoz.
-
-5. Később hozz létre Storage bucketet jelentkezési fájlokhoz:
+3. Kapcsold be a szukseges Auth provider(eke)t. Indulashoz eleg az e-mail login.
+4. Hozd letre az elso admin profilt service role-lal vagy SQL-bol egy meglevo `auth.users` rekordhoz.
+5. Kesobb hozz letre Storage bucketet jelentkezesi fajlokhoz:
 
 ```text
 application-files
 ```
 
-## Jogosultságok
+Supabase kapcsolat es kulcskezeles: `docs/supabase-connection.md`.
 
-Az induló szerepkörök:
+## Jogosultsagok
+
+Az indulo szerepkorok:
 
 - `admin`
 - `partner`
 
-Részletes terv: `docs/roles.md`.
+Reszletes terv: `docs/roles.md`.
 
-## DNS és e-mail
+## DNS es e-mail
 
-DNS, Vercel domain, Resend verification, SPF, DKIM és DMARC jegyzet:
+DNS, Vercel domain, Resend verification, SPF, DKIM es DMARC jegyzet:
 
 ```text
 docs/dns-and-email.md
 ```
 
-## Manuális indulási ellenőrzőlista
+## Manualis indulasi ellenorzolista
 
 ### GitHub
 
-- Hozz létre új, külön repót: `kekgallerost-web`.
-- A repo gyökere ez a mappa legyen, ne a korábbi GrapIt vagy statikus oldal.
-- Állíts be branch protectiont a `main` branchre, ha többen dolgoztok rajta.
-- Ne commitolj `.env` vagy `.env.local` fájlokat.
+- Repo: `kekgallerost-web`.
+- A repo gyokere ez a mappa legyen, ne a korabbi GrapIt vagy statikus oldal.
+- Ne commitolj `.env` vagy `.env.local` fajlokat.
 
 ### Vercel
 
-- Hozz létre projektet: `kekgallerost-web`.
-- Kösd össze a `kekgallerost-web` GitHub repóval.
+- Projekt: `kekgallerost-web`.
 - Framework preset: Next.js.
-- Add meg az environment variable-öket production, preview és development környezetben.
-- Add hozzá a domaint: `kekgallerost.hu`.
-- Állítsd be a `www` átirányítást az apex domainre.
+- Add meg az environment variable-okat Production, Preview es Development kornyezetben.
+- Add hozza a domaint: `kekgallerost.hu`.
+- Allitsd be a `www` atiranyitast az apex domainre.
 
 ### Supabase
 
-- Hozz létre projektet: `kekgallerost`, EU régióban.
+- Projekt: `kekgallerost`, EU regio.
 - Futtasd az initial migration SQL-t.
-- Másold át a Project URL-t és anon key-t a Vercel env változókba.
-- A service role key csak szerveroldali env változóba kerüljön.
-- Hozd létre az első admin felhasználót és profilt.
-- Később hozd létre az `application-files` Storage bucketet.
+- Masold at a Project URL-t es publishable/anon key-t a Vercel env valtozokba.
+- A service role vagy secret key csak szerveroldali env valtozoba keruljon.
+- Hozd letre az elso admin felhasznalot es profilt.
+- Kesobb hozd letre az `application-files` Storage bucketet.
 
 ### Resend
 
-- Hozz létre vagy válaszd ki a Resend fiókot.
-- Add hozzá a `kekgallerost.hu` domaint.
-- Hitelesítsd a domaint a Resend által adott DNS rekordokkal.
-- Hozz létre API kulcsot.
-- Állítsd be: `RESEND_FROM_EMAIL=info@kekgallerost.hu`.
+- Add hozza a `kekgallerost.hu` domaint.
+- Hitelesitsd a domaint a Resend altal adott DNS rekordokkal.
+- Hozz letre API kulcsot.
+- Allitsd be: `RESEND_FROM_EMAIL=info@kekgallerost.hu`.
 
-### Domain szolgáltató
+### Domain szolgaltato
 
-- Állítsd be a Vercelhez szükséges `A` és `CNAME` rekordokat.
-- Állítsd be a Resend DKIM/domain verification rekordokat.
-- Ellenőrizd, hogy csak egy SPF rekord van.
-- Add hozzá vagy frissítsd a DMARC rekordot.
-- Várd meg a DNS propagációt, majd ellenőrizd Vercelben és Resendben.
+- Allitsd be a Vercelhez szukseges `A` es `CNAME` rekordokat.
+- Allitsd be a Resend DKIM/domain verification rekordokat.
+- Ellenorizd, hogy csak egy SPF rekord van.
+- Add hozza vagy frissitsd a DMARC rekordot.
 
-## Következő fejlesztési lépések
+## Kovetkezo fejlesztesi lepesek
 
-1. Supabase kliens bevezetése route handler és server component használatra.
-2. Jelentkezési űrlap elkészítése `/allas/[slug]` alatt.
-3. Admin/partner auth guard és layout kialakítása.
-4. Álláshirdetés CRUD admin és partner felülethez.
-5. Jelentkezés státuszkezelés és Resend e-mail értesítések.
+1. Jelentkezesi urlap elkeszitese `/allas/[slug]` alatt.
+2. Admin/partner auth guard es layout kialakitasa.
+3. Allashirdetes CRUD admin es partner felulethez.
+4. Jelentkezes statuszkezeles es Resend e-mail ertesitesek.
