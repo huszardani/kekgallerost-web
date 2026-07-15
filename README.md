@@ -104,6 +104,7 @@ DNS, Vercel domain, Resend verification, SPF, DKIM es DMARC jegyzet:
 
 ```text
 docs/dns-and-email.md
+docs/resend-setup.md
 ```
 
 ## Manualis indulasi ellenorzolista

@@ -1,3 +1,5 @@
+import "server-only";
+
 import { Resend } from "resend";
 import { env } from "@/lib/env";
 
@@ -7,4 +9,8 @@ export function createResendClient() {
   }
 
   return new Resend(env.resendApiKey);
+}
+
+export function getEmailFromAddress() {
+  return env.emailFrom;
 }
