@@ -7,5 +7,7 @@ export const env = {
     process.env.EMAIL_FROM ??
     process.env.RESEND_FROM_EMAIL ??
     "Kekgalleros.hu <info@kekgallerost.hu>",
+  emailTestToken: process.env.EMAIL_TEST_TOKEN,
+  emailTestTo: process.env.EMAIL_TEST_TO,
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://kekgallerost.hu"
 };

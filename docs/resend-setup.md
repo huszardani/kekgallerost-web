@@ -140,3 +140,19 @@ A kodoldali Resend helper kesz:
 - .env.example
 
 A dashboard, DNS es API key lepesek kezi beavatkozast igenyelnek, ha nincs automatizalhato hozzaferes a Resend es DNS fiokhoz.
+## 9. Tesztkuldes
+
+A projekt tartalmaz egy vedett teszt endpointot:
+
+```text
+POST /api/email/smoke
+```
+
+Ehhez Vercelben add meg:
+
+```env
+EMAIL_TEST_TOKEN=
+EMAIL_TEST_TO=info@kekgallerost.hu
+```
+
+A `EMAIL_TEST_TOKEN` legyen hosszu, veletlenszeru titok. A tesztkuldes reszletei: `docs/smoke-tests.md`.
