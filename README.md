@@ -10,6 +10,8 @@ Kekgallerost.hu webapp alap technikai kornyezet.
 - Supabase regio: EU
 - Cel: allashirdetesi es jelentkezeskezelo rendszer admin es partner felulettel
 
+Adatbazis, RLS, Storage es feluleti telepites: `docs/database-and-permissions.md`.
+
 ## Technologiai alap
 
 - Next.js App Router

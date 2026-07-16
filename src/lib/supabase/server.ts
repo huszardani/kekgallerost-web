@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 export async function createServerSupabaseClient() {
   if (!env.supabaseUrl || !env.supabaseAnonKey) {
@@ -12,7 +13,7 @@ export async function createServerSupabaseClient() {
 
   const cookieStore = await cookies();
 
-  return createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
+  return createServerClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -35,7 +36,7 @@ export function createServiceSupabaseClient() {
     throw new Error("Missing Supabase service environment variables.");
   }
 
-  return createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
+  return createClient<Database>(env.supabaseUrl, env.supabaseServiceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false
