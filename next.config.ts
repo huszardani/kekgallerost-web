@@ -13,10 +13,6 @@ const nextConfig: NextConfig = {
           destination: "/allasok/:slug/index.html"
         },
         {
-          source: "/allasok",
-          destination: "/allasok/index.html"
-        },
-        {
           source: "/jogi-dokumentumok",
           destination: "/jogi-dokumentumok/index.html"
         }
