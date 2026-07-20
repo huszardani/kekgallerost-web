@@ -16,6 +16,8 @@ const template = read("src/app/allas/[slug]/job-template.tsx");
 const editor = read("src/app/admin/allasok/job-form.tsx");
 const adminActions = read("src/app/admin/crm-actions.ts");
 const adminPreview = read("src/app/admin/allasok/[id]/elozetes/page.tsx");
+const publicSiteFrame = read("src/app/_components/public-site-frame.tsx");
+const publicJobsCss = read("src/app/public-jobs.css");
 const mediaRoute = read("src/app/api/admin/job-media/route.ts");
 const emailSource = read("src/lib/email/application-confirmation.ts");
 const fileRoute = read("src/app/api/files/[fileId]/route.ts");
@@ -44,6 +46,14 @@ test("a publikus oldal és mindkét admin előnézet ugyanazt a sablont használ
   assert.doesNotMatch(publicJobPage, /FuvarszervezoDetails/);
   assert.match(template, /kg-job-detail-hero/);
   assert.match(template, /PublicSiteFrame/);
+});
+
+test("az Állások navigáció minden publikus nézetben elérhető és keskeny mobilon is elfér", () => {
+  assert.match(publicSiteFrame, /className="kg-jobs-nav-link"/);
+  assert.match(publicSiteFrame, /href="\/allasok"/);
+  assert.match(publicSiteFrame, /aria-hidden="true">←/);
+  assert.match(publicJobsCss, /@media \(max-width: 520px\)[\s\S]*?\.kg-brand-copy \{ display: none; \}/);
+  assert.match(publicJobsCss, /@media \(max-width: 360px\)[\s\S]*?\.kg-jobs-nav-link/);
 });
 
 test("a tartalmi blokkok és listaelemek normalizált táblákban vannak", () => {
