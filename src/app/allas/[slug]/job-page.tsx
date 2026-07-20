@@ -33,11 +33,11 @@ export default async function JobDetail({ params }: JobDetailPageProps) {
     url: `${siteUrl()}/allas/${job.slug}`
   };
 
-  return <main>
+  return <>
     <script dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} type="application/ld+json" />
     <JobPageTemplate
       application={<ApplicationForm jobId={job.id} questionOptions={questionOptions} questions={questions} resumeEnabled={job.resume_enabled} />}
       view={view}
     />
-  </main>;
+  </>;
 }

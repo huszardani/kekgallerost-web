@@ -37,6 +37,8 @@ export type JobPageMedia = {
   sortOrder: number;
 };
 
+export type JobPageFact = { label: string; value: string };
+
 export type JobPageView = {
   id: string;
   slug: string;
@@ -46,7 +48,10 @@ export type JobPageView = {
   category: string | null;
   intro: string | null;
   summary: string | null;
+  salary: string | null;
   facts: string[];
+  heroFacts: JobPageFact[];
+  heroHighlights: string[];
   hero: JobPageMedia | null;
   gallery: JobPageMedia[];
   socialImage: string | null;
@@ -71,6 +76,15 @@ const legacyBlocks: Array<{
   { type: "important", title: "Fontos tudnivalók", field: "important_information" },
   { type: "closing", title: "Jelentkezz most", field: "closing_cta" }
 ];
+
+function normalized(value: string | null | undefined) {
+  return (value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function firstFact(items: JobPageItem[], label: string) {
+  const needle = normalized(label);
+  return items.find((item) => normalized(item.title).includes(needle))?.body || null;
+}
 
 export function buildJobPageView(input: {
   job: Job;
@@ -110,6 +124,15 @@ export function buildJobPageView(input: {
     if (company.description) blocks.push({ type: "company", title: "A munkáltatóról", body: company.description, visible: true, sortOrder: 120, items: [] });
   }
 
+  const visibleBlocks = blocks
+    .filter((block) => block.visible && (block.body || block.items.length || block.type === "company"))
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const scheduleItems = visibleBlocks.find((block) => block.type === "schedule")?.items ?? [];
+  const requirements = visibleBlocks.find((block) => block.type === "requirements")?.items.filter((item) => item.body.trim()) ?? [];
+  const introHighlights = visibleBlocks
+    .find((block) => block.type === "intro")
+    ?.items.filter((item) => item.itemType === "highlight" && item.body.trim()) ?? [];
+
   const media: JobPageMedia[] = (input.media ?? []).map((item) => ({
     id: item.id,
     kind: item.kind,
@@ -124,6 +147,14 @@ export function buildJobPageView(input: {
   const social = media.filter((item) => item.kind === "social").sort((a, b) => a.sortOrder - b.sortOrder)[0];
   const salary = formatSalary(job);
   const location = [job.city, job.workplace_address].filter(Boolean).join(" · ") || job.location;
+  const schedule = [job.employment_fraction, job.work_schedule].filter(Boolean).join(", ") || job.employment_type;
+  const heroFacts = [
+    { label: "Hely", value: job.city || job.location || "" },
+    { label: "Munkarend", value: schedule || "" },
+    { label: "Kezdés", value: job.start_date_text || firstFact(scheduleItems, "kezd") || "" },
+    { label: "Bejárás", value: firstFact(scheduleItems, "bejár") || "" },
+    { label: "Fő feltétel", value: requirements[0]?.body || "" }
+  ].filter((fact) => fact.value.trim());
 
   return {
     id: job.id,
@@ -134,11 +165,14 @@ export function buildJobPageView(input: {
     category: job.category,
     intro: job.intro_text,
     summary: job.short_description ?? job.summary,
+    salary,
     facts: [location, job.work_mode, job.employment_fraction ?? job.employment_type, job.work_schedule, salary].filter((value): value is string => Boolean(value)),
+    heroFacts,
+    heroHighlights: (introHighlights.length ? introHighlights : requirements).slice(0, 3).map((item) => item.body),
     hero,
     gallery: media.filter((item) => item.kind === "gallery").sort((a, b) => a.sortOrder - b.sortOrder),
     socialImage: social?.url ?? job.social_image_url ?? hero?.url ?? null,
-    blocks: blocks.filter((block) => block.visible && (block.body || block.items.length || block.type === "company")).sort((a, b) => a.sortOrder - b.sortOrder),
+    blocks: visibleBlocks,
     applicationDeadline: job.application_deadline
   };
 }

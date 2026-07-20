@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-// @ts-expect-error Node 24 executes TypeScript directly; the explicit extension is required at runtime.
 import {
   allowedResumeMimeTypes, answerMatchesRule, applicationStatuses, canTransitionJob,
   isAllowedJobImage, isAllowedResume, isValidSlug, jobStatuses, maxJobImageSize,
@@ -43,7 +42,8 @@ test("a publikus oldal és mindkét admin előnézet ugyanazt a sablont használ
   assert.match(editor, /JobPageTemplate/);
   assert.match(adminPreview, /JobPageTemplate/);
   assert.doesNotMatch(publicJobPage, /FuvarszervezoDetails/);
-  assert.match(template, /job-template-hero/);
+  assert.match(template, /kg-job-detail-hero/);
+  assert.match(template, /PublicSiteFrame/);
 });
 
 test("a tartalmi blokkok és listaelemek normalizált táblákban vannak", () => {

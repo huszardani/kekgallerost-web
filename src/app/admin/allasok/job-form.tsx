@@ -18,7 +18,7 @@ type EditorFields = {
   heroImageUrl: string; resumeEnabled: boolean;
 };
 
-function itemRows(text: string | null | undefined, itemType: "bullet" | "faq" | "fact" = "bullet") {
+function itemRows(text: string | null | undefined, itemType: "bullet" | "highlight" | "faq" | "fact" = "bullet") {
   return (text ?? "").split(/\r?\n/).map((body) => body.trim()).filter(Boolean).map((body, index) => ({ itemType, body, title: null, sortOrder: (index + 1) * 10 }));
 }
 
@@ -165,11 +165,23 @@ export default function JobForm({ companies, job, contentBlocks = [], contentIte
     const heroSource = media.find((item) => item.kind === "hero");
     const mappedMedia = (item: JobMedia): JobPageMedia => ({ id: item.id, kind: item.kind, url: item.url, alt: item.alt_text, focusX: item.focus_x, focusY: item.focus_y, sortOrder: item.sort_order });
     const salary = fields.salaryDisplayMode === "hidden" ? null : fields.salaryDisplayMode === "range" ? `${fields.salaryMin || "?"}–${fields.salaryMax || "?"} ${fields.salaryCurrency}/${fields.salaryPeriod === "hour" ? "óra" : "hó"}` : fields.salaryText;
+    const scheduleItems = blocks.find((block) => block.type === "schedule")?.items ?? [];
+    const scheduleFact = (needle: string) => scheduleItems.find((item) => item.title?.toLocaleLowerCase("hu").includes(needle))?.body || "";
+    const requirements = blocks.find((block) => block.type === "requirements")?.items.filter((item) => item.body.trim()) ?? [];
+    const introHighlights = blocks.find((block) => block.type === "intro")?.items.filter((item) => item.itemType === "highlight" && item.body.trim()) ?? [];
     return {
       id: job?.id ?? "preview", slug: fields.slug, title: fields.title || "Új pozíció", employer: fields.employerLabel || company?.name || "Megbízónk",
       companyName: company?.name || "Megbízónk", category: fields.category || null, intro: fields.introText || null,
-      summary: fields.shortDescription || null,
+      summary: fields.shortDescription || null, salary,
       facts: [[fields.city, fields.workplaceAddress].filter(Boolean).join(" · ") || fields.location, fields.workMode, fields.employmentFraction || fields.employmentType, fields.workSchedule, salary].filter(Boolean) as string[],
+      heroFacts: [
+        { label: "Hely", value: fields.city || fields.location },
+        { label: "Munkarend", value: [fields.employmentFraction, fields.workSchedule].filter(Boolean).join(", ") || fields.employmentType },
+        { label: "Kezdés", value: scheduleFact("kezd") },
+        { label: "Bejárás", value: scheduleFact("bejár") },
+        { label: "Fő feltétel", value: requirements[0]?.body || "" }
+      ].filter((fact) => fact.value),
+      heroHighlights: (introHighlights.length ? introHighlights : requirements).slice(0, 3).map((item) => item.body),
       hero: heroSource ? mappedMedia(heroSource) : fields.heroImageUrl ? { kind: "hero", url: fields.heroImageUrl, alt: job?.hero_image_alt ?? fields.title, focusX: job?.hero_focus_x ?? 50, focusY: job?.hero_focus_y ?? 50, sortOrder: 0 } : null,
       gallery: media.filter((item) => item.kind === "gallery").map(mappedMedia), socialImage: media.find((item) => item.kind === "social")?.url ?? null,
       blocks: blocks.map((block) => block.type === "company" && !block.body ? { ...block, body: company?.description ?? "" } : block), applicationDeadline: fields.applicationDeadline || null
@@ -227,10 +239,10 @@ export default function JobForm({ companies, job, contentBlocks = [], contentIte
               {!definition.list || block.type === "role" ? <label className="admin-field full">Szöveg<textarea className="admin-textarea" onChange={(event) => updateBlock(block.type, { body: event.target.value })} rows={4} value={block.body ?? ""} /></label> : null}
             </div>
             {definition.list ? <div className="admin-list-editor">{block.items.map((item, itemIndex) => <div className="admin-list-editor-row" key={item.id ?? `${block.type}-${itemIndex}`}>
-              {(definition.itemType === "faq" || definition.itemType === "fact") ? <input aria-label={definition.itemType === "faq" ? "Kérdés" : "Megnevezés"} className="admin-input" onChange={(event) => updateItem(block.type, itemIndex, { title: event.target.value })} placeholder={definition.itemType === "faq" ? "Kérdés" : "Megnevezés"} value={item.title ?? ""} /> : null}
+              {(definition.itemType === "faq" || definition.itemType === "fact" || block.type === "fit") ? <input aria-label={definition.itemType === "faq" ? "Kérdés" : block.type === "fit" ? "Csoport" : "Megnevezés"} className="admin-input" onChange={(event) => updateItem(block.type, itemIndex, { title: event.target.value })} placeholder={definition.itemType === "faq" ? "Kérdés" : block.type === "fit" ? "Csoport, pl. Nem biztos, hogy neked való, ha" : "Megnevezés"} value={item.title ?? ""} /> : null}
               <textarea aria-label="Listaelem szövege" className="admin-textarea" onChange={(event) => updateItem(block.type, itemIndex, { body: event.target.value })} rows={2} value={item.body} />
               <div className="admin-list-controls"><button aria-label="Mozgatás felfelé" className="admin-button secondary small" disabled={itemIndex === 0} onClick={() => moveItem(block.type, itemIndex, -1)} type="button">↑</button><button aria-label="Mozgatás lefelé" className="admin-button secondary small" disabled={itemIndex === block.items.length - 1} onClick={() => moveItem(block.type, itemIndex, 1)} type="button">↓</button><button className="admin-button danger small" onClick={() => updateBlock(block.type, { items: block.items.filter((_, index) => index !== itemIndex) })} type="button">Törlés</button></div>
-            </div>)}<button className="admin-button secondary" onClick={() => addItem(block.type)} type="button">+ Új {definition.itemType === "faq" ? "kérdés" : definition.itemType === "fact" ? "adat" : "sor"} hozzáadása</button></div> : null}
+            </div>)}<button className="admin-button secondary" onClick={() => addItem(block.type)} type="button">+ Új {definition.itemType === "faq" ? "kérdés" : definition.itemType === "fact" ? "adat" : definition.itemType === "highlight" ? "kiemelés" : "sor"} hozzáadása</button></div> : null}
             <div className="admin-form-footer"><button className="admin-button secondary small" disabled={blockIndex === 0} onClick={() => moveBlock(blockIndex, -1)} type="button">Blokk feljebb</button><button className="admin-button secondary small" disabled={blockIndex === blocks.length - 1} onClick={() => moveBlock(blockIndex, 1)} type="button">Blokk lejjebb</button></div>
           </details>;
         })}
