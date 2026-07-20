@@ -1,1 +1,5 @@
-export { default } from "@/app/admin/dashboard";
+import { redirect } from "next/navigation";
+
+export default function AdminIndexPage() {
+  redirect("/admin/attekintes");
+}

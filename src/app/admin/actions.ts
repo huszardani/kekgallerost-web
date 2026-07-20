@@ -5,9 +5,9 @@ import { requireRole } from "@/lib/auth";
 import { createServerSupabaseClient, createServiceSupabaseClient } from "@/lib/supabase/server";
 import type { JobStatus, QuestionType } from "@/lib/supabase/database.types";
 
-const jobStatuses: JobStatus[] = ["draft", "published", "closed", "archived"];
+const jobStatuses: JobStatus[] = ["draft", "published", "paused", "closed"];
 const questionTypes: QuestionType[] = [
-  "text", "textarea", "select", "multiselect", "boolean", "file", "phone", "email"
+  "text", "textarea", "number", "select", "multiselect", "checkbox", "date", "boolean", "file", "phone", "email"
 ];
 
 function requiredText(formData: FormData, key: string) {
@@ -29,10 +29,15 @@ function legacyQuestionType(type: QuestionType) {
   const map = {
     text: "short_text",
     textarea: "long_text",
+    number: "number",
+    radio: "single_choice",
     select: "single_choice",
     multiselect: "multi_choice",
+    checkbox: "yes_no",
+    date: "short_text",
     boolean: "yes_no",
     file: "file",
+    resume: "file",
     phone: "short_text",
     email: "short_text"
   } as const;

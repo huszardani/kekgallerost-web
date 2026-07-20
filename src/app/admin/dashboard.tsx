@@ -15,7 +15,7 @@ import { requireRole } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Json, QuestionType } from "@/lib/supabase/database.types";
 
-const jobStatuses = ["draft", "published", "closed", "archived"] as const;
+const jobStatuses = ["draft", "published", "paused", "closed"] as const;
 const questionTypes: Array<{ value: QuestionType; label: string }> = [
   { value: "text", label: "Rövid szöveg" },
   { value: "textarea", label: "Hosszú szöveg" },
