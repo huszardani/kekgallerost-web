@@ -1,50 +1,147 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
-import type { JobPageBlock, JobPageView } from "@/lib/job-page";
+import PublicSiteFrame from "@/app/_components/public-site-frame";
+import type { JobPageBlock, JobPageItem, JobPageView } from "@/lib/job-page";
 
-function BlockContent({ block }: { block: JobPageBlock }) {
-  const items = block.items.filter((item) => item.body.trim());
-  if (block.type === "faq") {
-    return <div className="job-template-faq">{items.map((item, index) => <details key={item.id ?? `${item.body}-${index}`}><summary>{item.title || `Kérdés ${index + 1}`}<span aria-hidden="true">+</span></summary><p>{item.body}</p></details>)}</div>;
-  }
-  if (items.some((item) => item.itemType === "fact")) {
-    return <div className="job-template-facts">{items.map((item, index) => <div key={item.id ?? `${item.body}-${index}`}><strong>{item.title}</strong><span>{item.body}</span></div>)}</div>;
-  }
-  return <>{block.body ? <div className="preline-text">{block.body}</div> : null}{items.length ? <ul className="job-template-list">{items.map((item, index) => <li key={item.id ?? `${item.body}-${index}`}>{item.title ? <strong>{item.title}: </strong> : null}{item.body}</li>)}</ul> : null}</>;
+function listItems(block?: JobPageBlock) {
+  return block?.items.filter((item) => item.body.trim()) ?? [];
+}
+
+function BulletList({ items, className = "" }: { items: JobPageItem[]; className?: string }) {
+  if (!items.length) return null;
+  return <ul className={`kg-detail-list ${className}`.trim()}>{items.map((item, index) => <li key={item.id ?? `${item.body}-${index}`}>{item.body}</li>)}</ul>;
+}
+
+function SectionHeading({ block, fallbackEyebrow, fallbackTitle }: { block?: JobPageBlock; fallbackEyebrow: string; fallbackTitle: string }) {
+  return <div className="kg-section-heading"><p className="kg-eyebrow">{block?.eyebrow || fallbackEyebrow}</p><h2>{block?.title || fallbackTitle}</h2>{block?.body ? <p>{block.body}</p> : null}</div>;
+}
+
+function factItems(block?: JobPageBlock) {
+  return listItems(block).filter((item) => item.itemType === "fact");
 }
 
 export default function JobPageTemplate({ view, application, preview = false }: { view: JobPageView; application?: ReactNode; preview?: boolean }) {
-  const visibleBlocks = view.blocks.filter((block) => block.visible && (block.body || block.items.some((item) => item.body.trim())));
-  return (
-    <div className={`job-template${preview ? " is-preview" : ""}`}>
-      <section className="job-template-hero">
-        {view.hero ? <Image alt={view.hero.alt || view.title} className="job-template-hero-image" fill priority sizes="100vw" src={view.hero.url} style={{ objectPosition: `${view.hero.focusX}% ${view.hero.focusY}%` }} unoptimized /> : null}
-        <div className="job-template-hero-shade" />
-        <div className="page-shell job-template-hero-inner">
-          <p className="eyebrow light">{view.intro || view.category || view.employer}</p>
-          <h1>{view.title || "Új állás"}</h1>
-          {view.summary ? <p className="lead light">{view.summary}</p> : null}
-          <div className="job-facts">{view.facts.map((fact) => <span key={fact}>{fact}</span>)}</div>
-        </div>
-      </section>
+  const byType = (type: JobPageBlock["type"]) => view.blocks.find((block) => block.type === type);
+  const role = byType("role") ?? byType("intro");
+  const fit = byType("fit");
+  const tasks = byType("tasks");
+  const requirements = byType("requirements");
+  const advantages = byType("advantages");
+  const benefits = byType("benefits");
+  const compensation = byType("compensation");
+  const schedule = byType("schedule") ?? byType("location");
+  const process = byType("process");
+  const company = byType("company");
+  const faq = byType("faq");
+  const closing = byType("closing");
+  const roleItems = listItems(role).filter((item) => item.itemType !== "highlight");
+  const fitItems = listItems(fit);
+  const positiveFit = fitItems.filter((item) => !item.title || !item.title.toLocaleLowerCase("hu").includes("nem"));
+  const negativeFit = fitItems.filter((item) => item.title?.toLocaleLowerCase("hu").includes("nem"));
+  const scheduleFacts = factItems(schedule);
+  const quickFacts = scheduleFacts.length ? scheduleFacts.map((item) => ({ title: item.title || "Tudnivaló", body: item.body })) : view.heroFacts.map((item) => ({ title: item.label, body: item.value }));
+  const galleryRole = view.gallery[0];
+  const galleryTasks = view.gallery[1] ?? view.gallery[0];
 
-      <div className="page-shell job-template-layout">
-        <article className="job-template-content">
-          {visibleBlocks.map((block, index) => {
-            const galleryImage = view.gallery[index % Math.max(view.gallery.length, 1)];
-            const mediaBlock = galleryImage && ["role", "tasks", "benefits"].includes(block.type);
-            return <section className={`panel job-template-block block-${block.type}${mediaBlock ? " has-media" : ""}`} key={block.id ?? block.type}>
-              {mediaBlock && galleryImage ? <Image alt={galleryImage.alt} height={720} sizes="(max-width: 820px) 100vw, 45vw" src={galleryImage.url} style={{ objectPosition: `${galleryImage.focusX}% ${galleryImage.focusY}%` }} unoptimized width={1200} /> : null}
-              <div>
-                {block.eyebrow ? <p className="eyebrow">{block.eyebrow}</p> : null}
-                {block.title ? <h2>{block.title}</h2> : null}
-                <BlockContent block={block} />
+  return (
+    <div className={`kg-job-template${preview ? " is-preview" : ""}`}>
+      <PublicSiteFrame detail>
+        <main>
+          <section aria-labelledby="job-detail-title" className="kg-job-detail-hero">
+            <div className="kg-detail-hero-copy">
+              <div className="kg-detail-card-top">
+                <span aria-label="Kékgallérost.hu" className="kg-job-logo-pill"><Image alt="" height={36} src="/assets/logo-mark.png" width={36} /></span>
+                {view.salary ? <span className="kg-pill kg-salary-pill">{view.salary}</span> : null}
               </div>
-            </section>;
-          })}
-        </article>
-        <aside className="job-template-application" aria-label="Jelentkezés">{application ?? <div className="panel job-template-preview-form"><p className="eyebrow">Jelentkezés</p><h2>Jelentkezési űrlap</h2><p>Az éles oldalon itt jelennek meg az alapadatok, az egyedi kérdések és a fájlfeltöltés.</p><button className="button" disabled type="button">Jelentkezés elküldése</button></div>}</aside>
-      </div>
+              <h1 id="job-detail-title">{view.title || "Új állás"}</h1>
+              {view.summary ? <p className="kg-detail-subtitle">{view.summary}</p> : null}
+              {view.heroFacts.length ? <dl className="kg-detail-hero-facts">{view.heroFacts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl> : null}
+              {view.heroHighlights.length ? <div className="kg-detail-hero-highlights"><strong>Fontos tudnivalók</strong><ul>{view.heroHighlights.map((item) => <li key={item}>{item}</li>)}</ul></div> : null}
+              <div className="kg-detail-actions">
+                <a className="kg-button kg-button-primary" href="#application">Jelentkezem erre a munkára</a>
+                <a className="kg-button kg-button-light" href="#conditions">Megnézem a feltételeket</a>
+              </div>
+            </div>
+            <figure className="kg-job-hero-image">
+              {view.hero ? <Image alt={view.hero.alt || view.title} fill priority sizes="(max-width: 980px) 100vw, 45vw" src={view.hero.url} style={{ objectPosition: `${view.hero.focusX}% ${view.hero.focusY}%` }} unoptimized /> : <div className="kg-image-placeholder" />}
+            </figure>
+          </section>
+
+          {role ? <section aria-labelledby="role-title" className="kg-detail-section kg-work-image-section">
+            <div className="kg-work-image-layout">
+              {galleryRole ? <figure className="kg-work-image-frame"><Image alt={galleryRole.alt} height={760} sizes="(max-width: 980px) 100vw, 58vw" src={galleryRole.url} style={{ objectPosition: `${galleryRole.focusX}% ${galleryRole.focusY}%` }} unoptimized width={1100} /></figure> : null}
+              <div className="kg-work-image-copy">
+                <p className="kg-eyebrow">{role.eyebrow || "Munkakör röviden"}</p>
+                <h2 id="role-title">{role.title || `Mit csinál egy ${view.title.toLocaleLowerCase("hu")}?`}</h2>
+                {role.body ? <p>{role.body}</p> : null}
+                <BulletList items={roleItems} />
+                <a className="kg-button kg-button-primary" href="#application">Jelentkezem</a>
+              </div>
+            </div>
+          </section> : null}
+
+          {quickFacts.length ? <section aria-labelledby="quick-facts-title" className="kg-detail-section kg-quick-facts-section">
+            <SectionHeading block={schedule} fallbackEyebrow="Gyors döntési adatok" fallbackTitle="Legfontosabb tudnivalók még egyszer" />
+            <dl className="kg-quick-facts-grid" id="quick-facts-title">{quickFacts.map((fact) => <div key={fact.title ?? fact.body}><dt>{fact.title || "Tudnivaló"}</dt><dd>{fact.body}</dd></div>)}</dl>
+            <div className="kg-section-cta"><a className="kg-button kg-button-primary" href="#application">Érdekel, jelentkezem</a></div>
+          </section> : null}
+
+          {fit && fitItems.length ? <section aria-labelledby="fit-title" className="kg-detail-section kg-fit-section" id="conditions">
+            <SectionHeading block={fit} fallbackEyebrow="Illeszkedés" fallbackTitle="Neked való lehet, ha..." />
+            <div className="kg-fit-grid">
+              {positiveFit.length ? <article className="kg-fit-card kg-fit-positive"><h3>Neked való lehet, ha</h3><BulletList items={positiveFit} /></article> : null}
+              {negativeFit.length ? <article className="kg-fit-card kg-fit-warning"><h3>Nem biztos, hogy neked való, ha</h3><BulletList items={negativeFit} /></article> : null}
+            </div>
+          </section> : null}
+
+          {tasks ? <section aria-labelledby="tasks-title" className="kg-detail-section kg-tasks-section">
+            <div className="kg-detail-two-column">
+              <article className="kg-detail-panel kg-feature-panel">
+                <p className="kg-eyebrow">{tasks.eyebrow || "Feladatok"}</p><h2 id="tasks-title">{tasks.title || "Mit fogsz csinálni?"}</h2>
+                {tasks.body ? <p className="kg-block-intro">{tasks.body}</p> : null}<BulletList items={listItems(tasks)} />
+                <div className="kg-inline-cta"><a className="kg-button kg-button-primary" href="#application">Jelentkezem, ha passzol hozzám</a></div>
+              </article>
+              {galleryTasks ? <figure className="kg-task-image"><Image alt={galleryTasks.alt} height={900} sizes="(max-width: 1080px) 100vw, 40vw" src={galleryTasks.url} style={{ objectPosition: `${galleryTasks.focusX}% ${galleryTasks.focusY}%` }} unoptimized width={900} /></figure> : null}
+            </div>
+          </section> : null}
+
+          {(requirements || benefits || advantages) ? <section aria-labelledby="expectations-title" className="kg-detail-section kg-expectations-section">
+            <div className="kg-section-heading"><p className="kg-eyebrow">Kérünk és adunk</p><h2 id="expectations-title">Amit kérünk és amit adunk</h2></div>
+            <div className="kg-three-panels">
+              {requirements ? <article className="kg-detail-panel"><h3>{requirements.title || "Amit kérünk"}</h3><BulletList items={listItems(requirements)} /></article> : null}
+              {benefits ? <article className="kg-detail-panel"><h3>{benefits.title || "Amit adunk"}</h3><BulletList items={listItems(benefits)} /></article> : null}
+              {advantages ? <article className="kg-detail-panel"><h3>{advantages.title || "Előnyt jelent"}</h3><BulletList items={listItems(advantages)} /></article> : null}
+            </div>
+          </section> : null}
+
+          {compensation ? <section aria-labelledby="compensation-title" className="kg-detail-section kg-compensation-section">
+            <div className="kg-pay-card"><div><p className="kg-eyebrow">{compensation.eyebrow || "Bér és juttatások"}</p><h2 id="compensation-title">{compensation.title || "Fizetés"}</h2>{view.salary ? <strong>{view.salary}</strong> : null}{compensation.body ? <p>{compensation.body}</p> : null}</div><BulletList items={listItems(compensation)} /><a className="kg-button kg-button-primary" href="#application">Jelentkezem</a></div>
+          </section> : null}
+
+          {process ? <section aria-labelledby="process-title" className="kg-detail-section kg-process-section">
+            <SectionHeading block={process} fallbackEyebrow="Jelentkezési folyamat" fallbackTitle="Hogyan történik a jelentkezés?" />
+            <div className="kg-application-steps">
+              <article><span>1</span><div><strong>Kitöltöd a gyors jelentkezést</strong><p>Megadod az alapadataidat, és válaszolsz néhány, erre a munkára szabott kérdésre.</p></div></article>
+              <article><span>2</span><div><strong>A jelentkezésed bekerül a rendszerbe</strong><p>A munkáltató egy helyen látja az adataidat és a válaszaidat.</p></div></article>
+              <article><span>3</span><div><strong>Telefonos egyeztetés következhet</strong><p>Ha a válaszaid alapján szóba jöhetsz, a munkáltató felveszi veled a kapcsolatot.</p></div></article>
+            </div>
+            <p className="kg-process-note">A jelentkezés nem jelent automatikus felvételt. A további egyeztetésről és kiválasztásról a munkáltató dönt.</p>
+          </section> : null}
+
+          {company ? <section className="kg-detail-section"><article className="kg-trust-panel"><p className="kg-eyebrow">{company.eyebrow || "A cégről"}</p><h2>{company.title || view.companyName}</h2>{company.body ? <p>{company.body}</p> : null}</article></section> : null}
+
+          {faq && listItems(faq).length ? <section aria-labelledby="faq-title" className="kg-detail-section kg-mini-faq-section">
+            <SectionHeading block={faq} fallbackEyebrow="Mini GYIK" fallbackTitle="Gyakori kérdések" />
+            <div className="kg-mini-faq-grid" id="faq-title">{listItems(faq).map((item, index) => <details key={item.id ?? index}><summary>{item.title || `Kérdés ${index + 1}`}<span aria-hidden="true">+</span></summary><p>{item.body}</p></details>)}</div>
+          </section> : null}
+
+          <section aria-labelledby="application-title" className="kg-detail-section kg-application-section" id="application">
+            <div className="kg-section-heading"><p className="kg-eyebrow">Jelentkezés</p><h2 id="application-title">{closing?.title || "Jelentkezz és változtass"}</h2><p>{closing?.body || "Add meg az adataidat, válaszolj néhány rövid kérdésre, és a jelentkezésed automatikusan ehhez az álláshoz kapcsolódik."}</p></div>
+            <div className="kg-application-form-shell">{application ?? <div className="kg-preview-form"><h3>Jelentkezési űrlap</h3><p>Az éles oldalon itt jelennek meg az alapadatok, az egyedi kérdések és a fájlfeltöltés.</p><button className="kg-button kg-button-primary" disabled type="button">Jelentkezés elküldése</button></div>}</div>
+          </section>
+        </main>
+        <a className="kg-mobile-sticky-apply" href="#application">Jelentkezem</a>
+      </PublicSiteFrame>
     </div>
   );
 }

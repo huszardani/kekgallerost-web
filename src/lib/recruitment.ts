@@ -44,9 +44,9 @@ export const jobBlockDefinitions: Array<{
   label: string;
   defaultTitle: string;
   list: boolean;
-  itemType: "bullet" | "faq" | "fact";
+  itemType: "bullet" | "highlight" | "faq" | "fact";
 }> = [
-  { type: "intro", label: "Bevezető", defaultTitle: "Az állásról", list: false, itemType: "bullet" },
+  { type: "intro", label: "Bevezető", defaultTitle: "Az állásról", list: true, itemType: "highlight" },
   { type: "role", label: "A munkakör", defaultTitle: "A munkakör röviden", list: true, itemType: "bullet" },
   { type: "fit", label: "Kinek való", defaultTitle: "Neked való, ha", list: true, itemType: "bullet" },
   { type: "tasks", label: "Feladatok", defaultTitle: "Főbb feladatok", list: true, itemType: "bullet" },
@@ -54,8 +54,8 @@ export const jobBlockDefinitions: Array<{
   { type: "advantages", label: "Előnyt jelent", defaultTitle: "Előnyt jelent", list: true, itemType: "bullet" },
   { type: "benefits", label: "Amit kínálunk", defaultTitle: "Amit kínálunk", list: true, itemType: "bullet" },
   { type: "compensation", label: "Fizetés és juttatások", defaultTitle: "Fizetés és juttatások", list: true, itemType: "bullet" },
-  { type: "schedule", label: "Munkaidő és beosztás", defaultTitle: "Munkaidő és beosztás", list: false, itemType: "fact" },
-  { type: "location", label: "Munkavégzés helye", defaultTitle: "Munkavégzés helye", list: false, itemType: "fact" },
+  { type: "schedule", label: "Munkaidő és beosztás", defaultTitle: "Munkaidő és beosztás", list: true, itemType: "fact" },
+  { type: "location", label: "Munkavégzés helye", defaultTitle: "Munkavégzés helye", list: true, itemType: "fact" },
   { type: "process", label: "Kiválasztási folyamat", defaultTitle: "Kiválasztási folyamat", list: false, itemType: "bullet" },
   { type: "company", label: "A munkáltatóról", defaultTitle: "A munkáltatóról", list: false, itemType: "bullet" },
   { type: "faq", label: "Gyakori kérdések", defaultTitle: "Gyakori kérdések", list: true, itemType: "faq" },
