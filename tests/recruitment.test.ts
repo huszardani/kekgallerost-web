@@ -48,14 +48,28 @@ test("a publikus oldal és mindkét admin előnézet ugyanazt a sablont használ
   assert.match(template, /PublicSiteFrame/);
 });
 
-test("az Állások navigáció minden publikus nézetben elérhető és keskeny mobilon is elfér", () => {
-  assert.match(publicSiteFrame, /className="kg-jobs-nav-link"/);
-  assert.match(publicSiteFrame, /href="\/allasok"/);
-  assert.match(publicSiteFrame, /aria-hidden="true">←/);
-  assert.match(publicJobsCss, /@media \(max-width: 520px\)[\s\S]*?\.kg-brand-copy \{ display: none; \}/);
-  assert.match(publicJobsCss, /@media \(max-width: 360px\)[\s\S]*?\.kg-jobs-nav-link/);
+test("a publikus állásoldal a helyi statikus sablon szakaszait és szövegeit követi", () => {
+  assert.match(template, /view.quickFacts/);
+  assert.match(template, /Munkakör röviden/);
+  assert.match(template, /Amit adunk/);
+  assert.match(template, /Kitöltöm a jelentkezést/);
+  assert.match(template, /a pozícióhoz kapcsolódó jelentkezésedet/);
+  assert.doesNotMatch(template, /kg-compensation-section/);
+  assert.doesNotMatch(template, /kg-trust-panel/);
+  for (const field of ["applicant_city", "start_availability", "call_time", "has_experience", "commute_possible", "schedule_accepted", "application_note"]) assert.match(applicationForm, new RegExp(field));
+  assert.match(applicationRoute, /standardAnswerRows/);
+  assert.match(applicationRoute, /message: applicationNote/);
 });
-
+test("a részletező fejléc a helyi navigációt, az álláslista pedig a kiemelt Állások gombot használja", () => {
+  assert.equal(publicSiteFrame.includes('{detail ? <Link href="/allasok">Állások'), true);
+  assert.match(publicSiteFrame, /className="kg-jobs-nav-link"/);
+  assert.equal(publicSiteFrame.includes('href="/allasok"'), true);
+  assert.doesNotMatch(publicSiteFrame, /aria-hidden/);
+  assert.equal(publicJobsCss.includes("@media (max-width: 520px)"), true);
+  assert.equal(publicJobsCss.includes(".kg-brand-copy { display: none; }"), true);
+  assert.equal(publicJobsCss.includes("@media (max-width: 360px)"), true);
+  assert.equal(publicJobsCss.includes(".kg-jobs-nav-link"), true);
+});
 test("a tartalmi blokkok és listaelemek normalizált táblákban vannak", () => {
   assert.match(dynamicMigration, /create table if not exists public\.job_content_blocks/);
   assert.match(dynamicMigration, /create table if not exists public\.job_content_items/);
@@ -112,10 +126,9 @@ test("a jelentkezés eltárolja a kérdések pillanatképét", () => {
 });
 
 test("önéletrajz nélkül is beküldhető a jelentkezés", () => {
-  assert.match(applicationForm, /Önéletrajz \(opcionális\)/);
+  assert.match(applicationForm, /Önéletrajz feltöltése, ha van/);
   assert.doesNotMatch(applicationForm, /name="resume_file" required/);
 });
-
 test("csak ellenőrzött, legfeljebb 10 MB-os önéletrajz engedélyezett", () => {
   assert.equal(maxResumeSize, 10 * 1024 * 1024);
   assert.deepEqual([...allowedResumeMimeTypes], ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]);

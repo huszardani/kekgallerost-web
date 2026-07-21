@@ -49,9 +49,18 @@ export async function POST(request: Request) {
   const jobId = textValue(formData, "job_id", 100);
   const applicantName = textValue(formData, "applicant_name", 150);
   const applicantEmail = textValue(formData, "applicant_email", 254).toLowerCase();
-  const applicantPhone = textValue(formData, "applicant_phone", 50) || null;
+  const applicantPhone = textValue(formData, "applicant_phone", 50);
+  const applicantCity = textValue(formData, "applicant_city", 150);
+  const startAvailability = textValue(formData, "start_availability", 100);
+  const callTime = textValue(formData, "call_time", 100);
+  const hasExperience = textValue(formData, "has_experience", 100);
+  const commutePossible = textValue(formData, "commute_possible", 100);
+  const scheduleAccepted = textValue(formData, "schedule_accepted", 100);
+  const applicationNote = textValue(formData, "application_note", 5000);
   const consentAccepted = formData.get("consent_accepted") === "on";
-  if (!jobId || !applicantName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(applicantEmail) || !consentAccepted) return NextResponse.json({ error: "A név, az érvényes e-mail-cím és az adatkezelési hozzájárulás kötelező." }, { status: 400 });
+  if (!jobId || !applicantName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(applicantEmail) || !applicantPhone || !applicantCity || !startAvailability || !callTime || !hasExperience || !commutePossible || !scheduleAccepted || !applicationNote || !consentAccepted) {
+    return NextResponse.json({ error: "Kérjük, töltsd ki az összes kötelező mezőt, és fogadd el az adatkezelési hozzájárulást." }, { status: 400 });
+  }
 
   await activateScheduledJobs();
   const supabase = createServiceSupabaseClient();
@@ -104,7 +113,7 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
   const { data: application, error: applicationError } = await supabase.from("applications").insert({
     job_id: job.id, applicant_name: applicantName, applicant_email: applicantEmail, applicant_phone: applicantPhone,
-    candidate_name: applicantName, candidate_email: applicantEmail, candidate_phone: applicantPhone,
+    candidate_name: applicantName, candidate_email: applicantEmail, candidate_phone: applicantPhone, message: applicationNote,
     status: disqualified ? "not_qualified" : "new", source: "website", consent_accepted: true,
     consent_privacy: true, privacy_accepted_at: now
   }).select("id").single();
@@ -112,10 +121,19 @@ export async function POST(request: Request) {
 
   const uploadedPaths: string[] = [];
   try {
-    const answerRows = questions.filter((question) => question.question_type !== "file" && question.question_type !== "resume").map((question) => {
+    const standardAnswerRows = [
+      ["Lakóhely / település", applicantCity],
+      ["Mikor tudsz kezdeni?", startAvailability],
+      ["Mikor hívhatnak?", callTime],
+      ["Van releváns tapasztalatod?", hasExperience],
+      ["Megoldható számodra a bejárás?", commutePossible],
+      ["Vállalod a megadott munkarendet?", scheduleAccepted],
+      ["Megjegyzés / korábbi munkahelyek röviden", applicationNote]
+    ].map(([label, answer]) => ({ application_id: application.id, question_id: null, question_label_snapshot: label, answer_text: answer, answer_json: null }));
+    const answerRows = [...standardAnswerRows, ...questions.filter((question) => question.question_type !== "file" && question.question_type !== "resume").map((question) => {
       const answer = answerFor(question, formData);
       return { application_id: application.id, question_id: question.id, question_label_snapshot: question.question_text, answer_text: answer.text, answer_json: answer.json };
-    }).filter((answer) => answer.answer_text !== null || answer.answer_json !== null);
+    }).filter((answer) => answer.answer_text !== null || answer.answer_json !== null)];
     if (answerRows.length) { const { error } = await supabase.from("application_answers").insert(answerRows); if (error) throw error; }
     for (const { question, file, buffer } of pendingFiles) {
       const storedFilename = `${crypto.randomUUID()}-${sanitizeFilename(file.name)}`;

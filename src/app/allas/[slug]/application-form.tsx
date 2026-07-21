@@ -50,17 +50,46 @@ export default function ApplicationForm({ jobId, questions, questionOptions, res
       setState({ status: "error", message: "Hálózati hiba történt. Ellenőrizd a kapcsolatot, majd próbáld újra." });
     }
   }
-  if (state.status === "success") return <div className="panel success-panel" role="status"><h2>Sikeres jelentkezés</h2><p>{state.message}</p></div>;
-  return <form aria-busy={state.status === "sending"} className="panel form-stack application-form" encType="multipart/form-data" onSubmit={submit}>
+  if (state.status === "success") return <div className="panel success-panel" role="status"><h3>Megkaptuk a jelentkezésed.</h3><p>Rögzítettük az adataidat, az állásazonosítót és a kérdésekre adott válaszaidat. A további egyeztetésről a munkáltató dönt.</p></div>;
+  return <form aria-busy={state.status === "sending"} className="application-form kg-application-page-form" encType="multipart/form-data" onSubmit={submit}>
     <input name="job_id" type="hidden" value={jobId} />
     <label aria-hidden="true" className="honeypot">Weboldal<input autoComplete="off" name="website" tabIndex={-1} /></label>
-    <h2>Jelentkezés</h2><p className="muted-text">A csillaggal jelölt mezők kitöltése kötelező.</p>
-    <label htmlFor="applicant_name">Név *<input autoComplete="name" id="applicant_name" maxLength={150} name="applicant_name" required /></label>
-    <label htmlFor="applicant_email">E-mail-cím *<input autoComplete="email" id="applicant_email" maxLength={254} name="applicant_email" required type="email" /></label>
-    <label htmlFor="applicant_phone">Telefonszám<input autoComplete="tel" id="applicant_phone" maxLength={50} name="applicant_phone" type="tel" /></label>
-    {questions.map((question) => <QuestionField key={question.id} options={optionsFor(question, questionOptions)} question={question} />)}
-    {resumeEnabled ? <label htmlFor="resume_file">Önéletrajz (opcionális)<input accept=".pdf,.doc,.docx" id="resume_file" name="resume_file" type="file" /><small>PDF, DOC vagy DOCX; legfeljebb 10 MB. A dokumentum privát tárhelyre kerül.</small></label> : null}
-    <label className="checkbox-label consent-row"><input name="consent_accepted" required type="checkbox" /> <span>Elolvastam és elfogadom az <Link href="/jogi-dokumentumok" target="_blank">adatkezelési tájékoztatót</Link>. *</span></label>
+
+    <fieldset>
+      <legend>Alapadatok</legend>
+      <div className="kg-application-grid">
+        <label htmlFor="applicant_name"><span>Név</span><input autoComplete="name" id="applicant_name" maxLength={150} name="applicant_name" required /></label>
+        <label htmlFor="applicant_phone"><span>Telefonszám</span><input autoComplete="tel" id="applicant_phone" maxLength={50} name="applicant_phone" required type="tel" /></label>
+        <label htmlFor="applicant_email"><span>E-mail</span><input autoComplete="email" id="applicant_email" maxLength={254} name="applicant_email" required type="email" /></label>
+        <label htmlFor="applicant_city"><span>Lakóhely / település</span><input autoComplete="address-level2" id="applicant_city" maxLength={150} name="applicant_city" required /></label>
+        <label htmlFor="start_availability"><span>Mikor tudsz kezdeni?</span><select id="start_availability" name="start_availability" required><option value="">Válassz</option><option>Azonnal</option><option>1 héten belül</option><option>2-4 héten belül</option><option>Később egyeztetve</option></select></label>
+        <label htmlFor="call_time"><span>Mikor hívhatnak?</span><select id="call_time" name="call_time" required><option value="">Válassz</option><option>Délelőtt</option><option>Délután</option><option>Este</option><option>Bármikor</option></select></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Általános kérdések</legend>
+      <div className="kg-criteria-grid">
+        <label htmlFor="has_experience"><span>Van releváns tapasztalatod?</span><select id="has_experience" name="has_experience" required><option value="">Válassz</option><option>Igen</option><option>Nem</option><option>Részben / egyeztetést igényel</option></select></label>
+        <label htmlFor="commute_possible"><span>Megoldható számodra a bejárás?</span><select id="commute_possible" name="commute_possible" required><option value="">Válassz</option><option>Igen</option><option>Nem</option><option>Egyeztetést igényel</option></select></label>
+        <label htmlFor="schedule_accepted"><span>Vállalod a megadott munkarendet?</span><select id="schedule_accepted" name="schedule_accepted" required><option value="">Válassz</option><option>Igen</option><option>Nem</option><option>Egyeztetést igényel</option></select></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Állásspecifikus kérdések</legend>
+      <div className="kg-criteria-grid">{questions.map((question) => <QuestionField key={question.id} options={optionsFor(question, questionOptions)} question={question} />)}</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>CV és megjegyzés</legend>
+      <div className="kg-application-grid">
+        {resumeEnabled ? <label htmlFor="resume_file"><span>Önéletrajz feltöltése, ha van (nem kötelező)</span><input accept=".pdf,.doc,.docx" id="resume_file" name="resume_file" type="file" /><small>PDF, DOC vagy DOCX; legfeljebb 10 MB. A dokumentum privát tárhelyre kerül.</small></label> : null}
+        <label htmlFor="application_note"><span>Megjegyzés / korábbi munkahelyek röviden</span><textarea id="application_note" name="application_note" placeholder="Írd le röviden, ami fontos lehet a jelentkezéshez." required rows={6} /></label>
+      </div>
+    </fieldset>
+
+    <label className="checkbox-label consent-row"><input name="consent_accepted" required type="checkbox" /> <span>Hozzájárulok, hogy a jelentkezési adataimat a kiválasztott munkáltató megkapja. Elolvastam az <Link href="/jogi-dokumentumok" target="_blank">adatkezelési tájékoztatót</Link>.</span></label>
     {state.status === "error" ? <p className="alert error" role="alert">{state.message}</p> : null}
     <button className="button" disabled={state.status === "sending"} type="submit">{state.status === "sending" ? "Küldés…" : "Jelentkezés elküldése"}</button>
   </form>;

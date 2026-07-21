@@ -169,6 +169,17 @@ export default function JobForm({ companies, job, contentBlocks = [], contentIte
     const scheduleFact = (needle: string) => scheduleItems.find((item) => item.title?.toLocaleLowerCase("hu").includes(needle))?.body || "";
     const requirements = blocks.find((block) => block.type === "requirements")?.items.filter((item) => item.body.trim()) ?? [];
     const introHighlights = blocks.find((block) => block.type === "intro")?.items.filter((item) => item.itemType === "highlight" && item.body.trim()) ?? [];
+    const compensation = blocks.find((block) => block.type === "compensation");
+    const clean = (value: string | null | undefined) => (value ?? "").trim().replace(/[.!?]+$/, "");
+    const commute = scheduleFact("bejár");
+    const quickFacts = [
+      { label: "Bér", value: clean(compensation?.title || salary), detail: clean(compensation?.body?.split(",")[0]) },
+      { label: "Helyszín", value: clean(fields.city || fields.location), detail: clean(fields.workplaceAddress) },
+      { label: "Munkarend", value: clean([fields.employmentFraction, fields.workSchedule].filter(Boolean).join(", ") || fields.employmentType), detail: clean(scheduleFact("szerződés") || fields.employmentType) },
+      { label: "Kezdés", value: clean(scheduleFact("kezd")), detail: clean(scheduleFact("kezd")).toLocaleLowerCase("hu").includes("megegyezés") ? "Gyors egyeztetéssel" : null },
+      { label: "Bejárás", value: clean(commute), detail: commute.toLocaleLowerCase("hu").includes("autó") ? "Napi irodai jelenlét" : null },
+      { label: "Fő feltétel", value: clean(requirements[0]?.body) }
+    ].filter((fact) => fact.value);
     return {
       id: job?.id ?? "preview", slug: fields.slug, title: fields.title || "Új pozíció", employer: fields.employerLabel || company?.name || "Megbízónk",
       companyName: company?.name || "Megbízónk", category: fields.category || null, intro: fields.introText || null,
@@ -181,6 +192,7 @@ export default function JobForm({ companies, job, contentBlocks = [], contentIte
         { label: "Bejárás", value: scheduleFact("bejár") },
         { label: "Fő feltétel", value: requirements[0]?.body || "" }
       ].filter((fact) => fact.value),
+      quickFacts,
       heroHighlights: (introHighlights.length ? introHighlights : requirements).slice(0, 3).map((item) => item.body),
       hero: heroSource ? mappedMedia(heroSource) : fields.heroImageUrl ? { kind: "hero", url: fields.heroImageUrl, alt: job?.hero_image_alt ?? fields.title, focusX: job?.hero_focus_x ?? 50, focusY: job?.hero_focus_y ?? 50, sortOrder: 0 } : null,
       gallery: media.filter((item) => item.kind === "gallery").map(mappedMedia), socialImage: media.find((item) => item.kind === "social")?.url ?? null,
