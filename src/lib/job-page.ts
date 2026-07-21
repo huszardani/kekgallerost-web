@@ -38,6 +38,7 @@ export type JobPageMedia = {
 };
 
 export type JobPageFact = { label: string; value: string };
+export type JobPageQuickFact = JobPageFact & { detail?: string | null };
 
 export type JobPageView = {
   id: string;
@@ -51,6 +52,7 @@ export type JobPageView = {
   salary: string | null;
   facts: string[];
   heroFacts: JobPageFact[];
+  quickFacts: JobPageQuickFact[];
   heroHighlights: string[];
   hero: JobPageMedia | null;
   gallery: JobPageMedia[];
@@ -84,6 +86,10 @@ function normalized(value: string | null | undefined) {
 function firstFact(items: JobPageItem[], label: string) {
   const needle = normalized(label);
   return items.find((item) => normalized(item.title).includes(needle))?.body || null;
+}
+
+function withoutTerminalPunctuation(value: string | null | undefined) {
+  return (value ?? "").trim().replace(/[.!?]+$/, "");
 }
 
 export function buildJobPageView(input: {
@@ -128,6 +134,7 @@ export function buildJobPageView(input: {
     .filter((block) => block.visible && (block.body || block.items.length || block.type === "company"))
     .sort((a, b) => a.sortOrder - b.sortOrder);
   const scheduleItems = visibleBlocks.find((block) => block.type === "schedule")?.items ?? [];
+  const compensationBlock = visibleBlocks.find((block) => block.type === "compensation");
   const requirements = visibleBlocks.find((block) => block.type === "requirements")?.items.filter((item) => item.body.trim()) ?? [];
   const introHighlights = visibleBlocks
     .find((block) => block.type === "intro")
@@ -155,6 +162,15 @@ export function buildJobPageView(input: {
     { label: "Bejárás", value: firstFact(scheduleItems, "bejár") || "" },
     { label: "Fő feltétel", value: requirements[0]?.body || "" }
   ].filter((fact) => fact.value.trim());
+  const commute = firstFact(scheduleItems, "bejár") || heroFacts.find((fact) => normalized(fact.label) === "bejaras")?.value || "";
+  const quickFacts: JobPageQuickFact[] = [
+    { label: "Bér", value: withoutTerminalPunctuation(compensationBlock?.title || salary), detail: withoutTerminalPunctuation(compensationBlock?.body?.split(",")[0]) },
+    { label: "Helyszín", value: withoutTerminalPunctuation(job.city || job.location), detail: withoutTerminalPunctuation(job.workplace_address) },
+    { label: "Munkarend", value: withoutTerminalPunctuation(schedule), detail: withoutTerminalPunctuation(firstFact(scheduleItems, "szerződés") || job.employment_type) },
+    { label: "Kezdés", value: withoutTerminalPunctuation(job.start_date_text || firstFact(scheduleItems, "kezd")), detail: normalized(job.start_date_text).includes("megegyezes") ? "Gyors egyeztetéssel" : null },
+    { label: "Bejárás", value: withoutTerminalPunctuation(commute), detail: normalized(commute).includes("auto") ? "Napi irodai jelenlét" : null },
+    { label: "Fő feltétel", value: withoutTerminalPunctuation(requirements[0]?.body) }
+  ].filter((fact) => fact.value);
 
   return {
     id: job.id,
@@ -168,6 +184,7 @@ export function buildJobPageView(input: {
     salary,
     facts: [location, job.work_mode, job.employment_fraction ?? job.employment_type, job.work_schedule, salary].filter((value): value is string => Boolean(value)),
     heroFacts,
+    quickFacts,
     heroHighlights: (introHighlights.length ? introHighlights : requirements).slice(0, 3).map((item) => item.body),
     hero,
     gallery: media.filter((item) => item.kind === "gallery").sort((a, b) => a.sortOrder - b.sortOrder),

@@ -28,15 +28,14 @@ export default function PublicSiteFrame({ children, detail = false }: PublicSite
       <header className="kg-site-header">
         <Brand detail={detail} />
         <nav aria-label="Fő navigáció" className="kg-main-nav">
-          <Link href="/">Főoldal</Link>
+          {detail ? <Link href="/allasok">Állások</Link> : <Link href="/">Főoldal</Link>}
           <Link href="/#companies">Cégeknek</Link>
           {!detail ? <Link href="/#pricing">Árak</Link> : null}
           <Link href="/#faq">GYIK</Link>
         </nav>
-        <Link aria-current={detail ? undefined : "page"} className="kg-jobs-nav-link" href="/allasok">
-          {detail ? <span aria-hidden="true">←</span> : null}
+        {!detail ? <Link aria-current="page" className="kg-jobs-nav-link" href="/allasok">
           <span>Állások</span>
-        </Link>
+        </Link> : null}
         <Link className="kg-nav-cta" href={detail ? "#application" : "/#company-request"}>
           {detail ? "Jelentkezem" : "Ajánlatkérés"}
         </Link>

@@ -19,7 +19,7 @@
 .kg-public-site *, .kg-public-site *::before, .kg-public-site *::after { box-sizing: border-box; }
 .kg-public-site img { display: block; max-width: 100%; }
 .kg-public-site a { color: inherit; text-decoration: none; }
-.kg-public-site h1, .kg-public-site h2, .kg-public-site h3 { letter-spacing: 0; overflow-wrap: anywhere; }
+.kg-public-site h1, .kg-public-site h2, .kg-public-site h3 { letter-spacing: 0; overflow-wrap: break-word; }
 .kg-job-detail-page { background: #f4f7f9; }
 
 .kg-skip-link {
@@ -135,7 +135,7 @@
 .kg-detail-card-top { margin-bottom: 14px; }
 .kg-detail-card-top .kg-job-logo-pill { border-color: rgba(255,255,255,.65); height: 52px; width: 52px; }
 .kg-detail-card-top .kg-salary-pill { margin-left: auto; white-space: normal; }
-.kg-job-detail-hero h1 { color: #fff; font-size: clamp(2.65rem,4.6vw,4.8rem); line-height: 1.02; margin: 0; }
+.kg-job-detail-hero h1 { color: #fff; font-size: clamp(2.25rem,4vw,4.25rem); line-height: 1.02; margin: 0; overflow-wrap: normal; word-break: normal; }
 .kg-detail-subtitle { color: rgba(255,255,255,.88); font-size: 1.05rem; font-weight: 850; line-height: 1.55; margin: 0; }
 .kg-detail-hero-facts { display: grid; gap: 10px; grid-template-columns: repeat(2,minmax(0,1fr)); margin: 8px 0 0; }
 .kg-detail-hero-facts > div { background: rgba(255,255,255,.92); border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 11px 12px; }
@@ -165,10 +165,11 @@
 .kg-detail-list { display: grid; gap: 10px; list-style: none; margin: 2px 0 0; padding: 0; }
 .kg-detail-list li { color: #344255; font-weight: 760; line-height: 1.42; padding-left: 20px; position: relative; }
 .kg-detail-list li::before { background: var(--kg-orange); border-radius: 50%; content: ""; height: 8px; left: 0; position: absolute; top: .55em; width: 8px; }
-.kg-quick-facts-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); margin: 0 auto; width: min(920px,100%); }
-.kg-quick-facts-grid > div { background: #fff; border: 1px solid var(--kg-border); border-radius: 8px; box-shadow: 0 10px 26px rgba(17,24,39,.05); padding: 14px; }
+.kg-quick-facts-grid { display: grid; gap: 10px; grid-template-columns: repeat(3,minmax(0,1fr)); margin: 0 auto; width: min(860px,100%); }
+.kg-quick-facts-grid > div { background: #fff; border: 1px solid var(--kg-border); border-radius: 8px; box-shadow: 0 10px 26px rgba(17,24,39,.05); display: flex; flex-direction: column; min-height: 112px; padding: 12px 14px; }
 .kg-quick-facts-grid dt { color: #64748b; font-size: .72rem; font-weight: 950; text-transform: uppercase; }
-.kg-quick-facts-grid dd { color: var(--kg-ink); font-size: .94rem; font-weight: 900; line-height: 1.28; margin: 5px 0 0; }
+.kg-quick-facts-grid dd { color: var(--kg-ink); font-size: .9rem; font-weight: 900; line-height: 1.2; margin: 5px 0 0; }
+.kg-quick-facts-grid small { color: #64748b; display: block; font-size: .74rem; font-weight: 750; line-height: 1.2; margin-top: 5px; }
 .kg-section-cta { display: flex; justify-content: center; margin: 18px auto 0; width: min(1180px,100%); }
 .kg-fit-grid, .kg-detail-two-column { display: grid; gap: 16px; grid-template-columns: repeat(2,minmax(0,1fr)); margin: 0 auto; width: min(1180px,100%); }
 .kg-fit-card, .kg-detail-panel, .kg-pay-card, .kg-trust-panel, .kg-preview-form {
@@ -202,12 +203,27 @@
 .kg-mini-faq-grid summary span { color: var(--kg-orange); font-size: 1.35rem; }
 .kg-mini-faq-grid details p { color: #405064; font-weight: 720; line-height: 1.5; margin: 0; padding: 0 16px 16px; }
 .kg-application-section { background: #fff !important; }
-.kg-application-form-shell { margin: 0 auto; width: min(900px,100%); }
+.kg-application-form-shell { margin: 0 auto; width: min(1120px,100%); }
 .kg-application-form-shell .application-form { border: 1px solid var(--kg-border); border-radius: 8px; box-shadow: 0 14px 34px rgba(17,24,39,.08); padding: 28px; position: static; }
 .kg-application-form-shell .application-form h2 { color: var(--kg-ink); font-size: 1.8rem; margin: 0; }
 .kg-application-form-shell .application-form label, .kg-application-form-shell .question-fieldset legend { color: #344255; font-weight: 850; }
 .kg-application-form-shell .application-form input, .kg-application-form-shell .application-form select, .kg-application-form-shell .application-form textarea { border-color: #b9c9d8; border-radius: 8px; }
 .kg-application-form-shell .application-form .button { background: var(--kg-orange); border-radius: 8px; box-shadow: 0 14px 30px rgba(255,122,33,.28); justify-content: center; width: 100%; }
+.kg-application-page-form { display: grid; gap: 18px; margin: 0; width: 100%; }
+.kg-application-page-form > fieldset { border: 1px solid #d7e5f4; border-radius: 8px; margin: 0; min-width: 0; padding: 18px; }
+.kg-application-page-form legend { color: #223047; font-weight: 900; padding: 0 5px; }
+.kg-application-grid { display: grid; gap: 14px; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.kg-criteria-grid { display: grid; gap: 10px; grid-template-columns: repeat(3,minmax(0,1fr)); }
+.kg-application-page-form label { color: #344255; display: grid; font-size: .9rem; font-weight: 850; gap: 7px; min-width: 0; }
+.kg-application-page-form label > span { color: #223047; display: block; line-height: 1.35; }
+.kg-application-page-form input, .kg-application-page-form select, .kg-application-page-form textarea { min-width: 0; width: 100%; }
+.kg-application-page-form textarea { resize: vertical; }
+.kg-application-page-form .question-fieldset { border: 0; display: grid; gap: 7px; margin: 0; min-width: 0; padding: 0; }
+.kg-application-page-form .question-fieldset legend { font-size: .9rem; padding: 0; }
+.kg-application-page-form .checkbox-label { align-items: flex-start; display: flex; gap: 10px; }
+.kg-application-page-form .checkbox-label input { flex: 0 0 auto; margin-top: 3px; min-height: 18px; width: 18px; }
+.kg-application-page-form .consent-row { line-height: 1.45; }
+.kg-application-page-form .consent-row a { color: #165fad; text-decoration: underline; }
 .kg-mobile-sticky-apply { display: none; }
 
 .kg-site-footer { background: var(--kg-navy); border-top: 1px solid rgba(255,255,255,.14); color: #fff; display: grid; gap: 28px; grid-template-columns: 1.2fr 1fr 1fr; padding: 36px 34px; }
@@ -232,8 +248,15 @@
   .kg-job-template .kg-site-footer { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 1080px) {
+  .kg-criteria-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
 @media (max-width: 980px) {
   .kg-main-nav { display: none; }
+  .kg-job-detail-page .kg-site-header { flex-wrap: wrap; }
+  .kg-job-detail-page .kg-main-nav { display: flex; margin-left: 0; order: 3; overflow-x: auto; padding-bottom: 2px; width: 100%; }
+  .kg-job-detail-page .kg-nav-cta { margin-left: auto; }
   .kg-jobs-nav-link { margin-left: auto; }
   .kg-nav-cta { margin-left: 0; }
   .kg-jobs-page-hero, .kg-search-form, .kg-job-detail-hero, .kg-work-image-layout, .kg-fit-grid, .kg-detail-two-column, .kg-pay-card { grid-template-columns: 1fr; }
@@ -261,11 +284,20 @@
   .kg-job-detail-hero h1 { font-size: clamp(2.35rem,12vw,3.5rem); }
   .kg-job-hero-image { min-height: 390px; }
   .kg-detail-actions .kg-button, .kg-section-cta .kg-button, .kg-inline-cta .kg-button { width: 100%; }
+  .kg-application-grid, .kg-criteria-grid { grid-template-columns: 1fr; }
   .kg-detail-section { padding: 44px 16px; }
   .kg-fit-card, .kg-detail-panel, .kg-pay-card, .kg-trust-panel { padding: 18px; }
   .kg-application-form-shell .application-form { padding: 18px; }
   .kg-mobile-sticky-apply { background: var(--kg-orange); border-radius: 8px; bottom: 10px; box-shadow: 0 16px 38px rgba(255,122,33,.32); color: #fff; display: flex; font-weight: 950; justify-content: center; left: 12px; min-height: 52px; padding: 14px; position: fixed; right: 12px; z-index: 80; }
   .kg-site-footer { grid-template-columns: 1fr; padding: 30px 20px 96px; }
+}
+
+@media (max-width: 760px) {
+  .kg-quick-facts-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+@media (max-width: 560px) {
+  .kg-quick-facts-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 520px) {

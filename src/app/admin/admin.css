@@ -106,6 +106,15 @@
 .admin-form-section-header p { color: var(--admin-muted); font-size: 13px; margin: 0; }
 .admin-form-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .admin-form-grid .full { grid-column: 1 / -1; }
+.admin-template-preset { border-left: 4px solid var(--admin-blue); }
+.admin-template-preset-content { align-items: start; display: flex; gap: 22px; justify-content: space-between; }
+.admin-template-preset-content strong { display: block; font-size: 15px; margin-bottom: 8px; }
+.admin-template-preset-content ul { color: var(--admin-muted); line-height: 1.65; margin: 0; padding-left: 20px; }
+.admin-template-preset-content .admin-button { flex: 0 0 auto; }
+.admin-quick-facts-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-quick-facts-grid .admin-field { background: #f8fafc; border: 1px solid #e3e8ef; border-radius: 9px; padding: 12px; }
+.admin-quick-facts-grid .admin-field small { color: var(--admin-muted); font-weight: 500; line-height: 1.4; }
+
 .admin-checkbox { align-items: center; display: flex; font-size: 13px; font-weight: 700; gap: 9px; }
 .admin-checkbox input { height: 18px; width: 18px; }
 .admin-form-footer { align-items: center; border-top: 1px solid #edf0f4; display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; padding-top: 18px; }
@@ -155,6 +164,7 @@
   .admin-main { padding: 22px 15px 42px; }
   .admin-page-header { align-items: stretch; flex-direction: column; }
   .admin-stat-grid, .admin-form-grid, .admin-filterbar { grid-template-columns: 1fr; }
+}
 
 /* Dynamic job editor and live preview. */
 .job-editor-shell { align-items: start; display: grid; gap: 20px; grid-template-columns: minmax(560px, 1fr) minmax(440px, .9fr); }
@@ -201,7 +211,9 @@
   .admin-list-editor-row, .admin-schedule-form { grid-template-columns: 1fr; }
   .admin-list-controls { display: flex; flex-wrap: wrap; }
   .admin-media-grid { grid-template-columns: 1fr; }
-}
+  .admin-template-preset-content { align-items: stretch; flex-direction: column; }
+  .admin-template-preset-content .admin-button { width: 100%; }
+  .admin-quick-facts-grid { grid-template-columns: 1fr; }
   .admin-card { padding: 17px; }
   .admin-definition-list > div { grid-template-columns: 1fr; gap: 4px; }
 }
