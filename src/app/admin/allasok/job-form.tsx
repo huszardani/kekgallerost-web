@@ -62,6 +62,38 @@ function initialFields(job: Job | undefined, companies: Company[]): EditorFields
   };
 }
 
+const localReferenceVisibleBlocks = new Set(["intro", "role", "fit", "tasks", "requirements", "advantages", "benefits", "schedule", "process"]);
+
+function localReferenceBlocks(): EditorBlock[] {
+  return initialBlocks(undefined, [], []).map((block) => {
+    const titles: Partial<Record<EditorBlock["type"], { eyebrow: string; title: string; body?: string }>> = {
+      intro: { eyebrow: "Fontos tudnivalók", title: "Az állásról" },
+      role: { eyebrow: "Munkakör röviden", title: "Mit csinál ebben a munkakörben?" },
+      fit: { eyebrow: "Illeszkedés", title: "Neked való lehet, ha" },
+      tasks: { eyebrow: "Feladatok", title: "Mit fogsz csinálni?" },
+      requirements: { eyebrow: "Elvárások", title: "Amit kérünk" },
+      advantages: { eyebrow: "Előnyt jelent", title: "Előnyt jelent" },
+      benefits: { eyebrow: "Amit adunk", title: "Amit adunk" },
+      compensation: { eyebrow: "Bér és juttatások", title: "" },
+      schedule: { eyebrow: "Gyors döntési adatok", title: "Munkaidő és beosztás" },
+      process: { eyebrow: "Jelentkezési folyamat", title: "Hogyan történik a jelentkezés?", body: "A jelentkezés három rövid lépésből áll." }
+    };
+    const preset = titles[block.type];
+    return {
+      ...block,
+      eyebrow: preset?.eyebrow ?? block.eyebrow,
+      title: preset?.title ?? block.title,
+      body: preset?.body ?? "",
+      visible: localReferenceVisibleBlocks.has(block.type),
+      items: block.type === "schedule" ? [
+        { itemType: "fact", title: "Kezdés", body: "", sortOrder: 10 },
+        { itemType: "fact", title: "Bejárás", body: "", sortOrder: 20 },
+        { itemType: "fact", title: "Szerződés", body: "", sortOrder: 30 }
+      ] : []
+    };
+  });
+}
+
 function MediaManager({ job, media, onChange }: { job?: Job; media: JobMedia[]; onChange: (media: JobMedia[]) => void }) {
   const [kind, setKind] = useState<"hero" | "gallery" | "social">("hero");
   const [alt, setAlt] = useState("");
@@ -127,6 +159,7 @@ export default function JobForm({ companies, job, contentBlocks = [], contentIte
   const [editVersion, setEditVersion] = useState(0);
   const [submittedVersion, setSubmittedVersion] = useState(-1);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
+  const [presetMessage, setPresetMessage] = useState("");
   const [result, formAction, pending] = useActionState(saveJobEditorAction, { ok: false });
   const dirty = editVersion > 0 && !(result.ok && submittedVersion === editVersion);
   const markDirty = () => setEditVersion((version) => version + 1);
@@ -158,6 +191,43 @@ export default function JobForm({ companies, job, contentBlocks = [], contentIte
     const block = blocks.find((item) => item.type === type); if (!block) return; const target = index + direction; if (target < 0 || target >= block.items.length) return;
     const next = [...block.items]; [next[index], next[target]] = [next[target], next[index]];
     updateBlock(type, { items: next.map((item, itemIndex) => ({ ...item, sortOrder: (itemIndex + 1) * 10 })) });
+  }
+
+  const normalizedFactLabel = (value: string | null | undefined) => (value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("hu");
+  const factValue = (type: EditorBlock["type"], label: string) => blocks.find((block) => block.type === type)?.items.find((item) => normalizedFactLabel(item.title).includes(normalizedFactLabel(label)))?.body ?? "";
+  const mainRequirement = blocks.find((block) => block.type === "requirements")?.items[0]?.body ?? "";
+  const compensationDetail = blocks.find((block) => block.type === "compensation")?.body ?? "";
+
+  function updateFact(type: EditorBlock["type"], label: string, body: string) {
+    const block = blocks.find((item) => item.type === type); if (!block) return;
+    const index = block.items.findIndex((item) => normalizedFactLabel(item.title).includes(normalizedFactLabel(label)));
+    const items = index >= 0
+      ? block.items.map((item, itemIndex) => itemIndex === index ? { ...item, body } : item)
+      : [...block.items, { itemType: "fact" as const, title: label, body, sortOrder: (block.items.length + 1) * 10 }];
+    updateBlock(type, { visible: true, items });
+  }
+
+  function updateMainRequirement(body: string) {
+    const block = blocks.find((item) => item.type === "requirements"); if (!block) return;
+    const items = block.items.length
+      ? block.items.map((item, index) => index === 0 ? { ...item, body } : item)
+      : [{ itemType: "bullet" as const, title: null, body, sortOrder: 10 }];
+    updateBlock("requirements", { visible: true, items });
+  }
+
+  function applyLocalReferencePreset() {
+    if (dirty && !window.confirm("A sablon lecseréli a jelenlegi tartalmi blokkokat. Folytatod?")) return;
+    setFields((current) => ({
+      ...current,
+      workMode: current.workMode || "Helyszíni",
+      employmentType: current.employmentType || "Határozatlan idejű",
+      employmentFraction: current.employmentFraction || "Teljes munkaidő",
+      salaryDisplayMode: "text",
+      resumeEnabled: true
+    }));
+    setBlocks(localReferenceBlocks());
+    setPresetMessage("A helyi állásoldal szerkezete betöltve. Töltsd ki a megjelölt gyorsadatokat és tartalmi blokkokat.");
+    markDirty();
   }
 
   const company = companies.find((item) => item.id === fields.companyId) ?? companies[0];
@@ -204,6 +274,15 @@ export default function JobForm({ companies, job, contentBlocks = [], contentIte
     <form action={formAction} className="job-editor-form" onChange={markDirty} onSubmit={() => setSubmittedVersion(editVersion)}>
       {job ? <input name="job_id" type="hidden" value={job.id} /> : null}
       <input name="content_blocks_json" type="hidden" value={JSON.stringify(blocks)} />
+      {!job ? <section className="admin-card admin-form-section admin-template-preset">
+        <div className="admin-form-section-header"><h3>Oldalsablon</h3><p>Ezzel a publikus oldalt a helyi mintával azonos szerkezetben indíthatod el.</p></div>
+        <div className="admin-template-preset-content">
+          <div><strong>Helyi állásoldal felépítése</strong><ul><li>képes fejléc és öt kiemelt adat</li><li>munkakör, gyors döntési adatok és illeszkedés</li><li>feladatok, elvárások, előnyök és amit adunk</li><li>háromlépéses jelentkezési folyamat és jelentkezési űrlap</li></ul></div>
+          <button className="admin-button" onClick={applyLocalReferencePreset} type="button">Helyi állásoldal-sablon betöltése</button>
+        </div>
+        {presetMessage ? <p className="admin-inline-success" role="status">{presetMessage}</p> : null}
+      </section> : null}
+
       <section className="admin-card admin-form-section">
         <div className="admin-form-section-header"><h3>Alapadatok</h3><p>Ezek az adatok a listában, a fejlécben, a SEO-ban és a jelentkezési folyamatban is megjelennek.</p></div>
         <div className="admin-form-grid">
@@ -233,6 +312,22 @@ export default function JobForm({ companies, job, contentBlocks = [], contentIte
           {fields.salaryDisplayMode === "range" ? <><label className="admin-field">Minimum<input className="admin-input" min="0" name="salary_min" onChange={(event) => field("salaryMin", event.target.value)} type="number" value={fields.salaryMin} /></label><label className="admin-field">Maximum<input className="admin-input" min="0" name="salary_max" onChange={(event) => field("salaryMax", event.target.value)} type="number" value={fields.salaryMax} /></label><label className="admin-field">Pénznem<input className="admin-input" maxLength={3} name="salary_currency" onChange={(event) => field("salaryCurrency", event.target.value.toUpperCase())} value={fields.salaryCurrency} /></label><label className="admin-field">Időszak<select className="admin-select" name="salary_period" onChange={(event) => field("salaryPeriod", event.target.value)} value={fields.salaryPeriod}><option value="month">Havi</option><option value="hour">Órabér</option><option value="day">Napidíj</option></select></label></> : null}
           <label className="admin-field full">Külső főkép URL (átmeneti/kompatibilitási mező)<input className="admin-input" name="hero_image_url" onChange={(event) => field("heroImageUrl", event.target.value)} type="url" value={fields.heroImageUrl} /></label>
           <label className="admin-checkbox full"><input checked={fields.resumeEnabled} name="resume_enabled" onChange={(event) => field("resumeEnabled", event.target.checked)} type="checkbox" /> Opcionális külön önéletrajz-feltöltés engedélyezése</label>
+        </div>
+      </section>
+
+      <section className="admin-card admin-form-section" id="gyorsadatok">
+        <div className="admin-form-section-header"><h3>Gyors döntési adatok</h3><p>Ez a hat adat a helyi mintához hasonló kártyákban jelenik meg. Az itt végzett módosítások a kapcsolódó alapadatokat és tartalmi blokkokat is frissítik.</p></div>
+        <div className="admin-quick-facts-grid">
+          <label className="admin-field" data-quick-fact="salary">Bér<input className="admin-input" onChange={(event) => { if (fields.salaryDisplayMode !== "text") field("salaryDisplayMode", "text"); field("salaryText", event.target.value); }} placeholder="pl. Átlag ~650 000 Ft/hó fix + bónusz" value={fields.salaryText} /><small>Beíráskor szöveges bérmegjelenítésre vált.</small></label>
+          <label className="admin-field" data-quick-fact="salary-detail">Bér részlete<input className="admin-input" onChange={(event) => updateBlock("compensation", { visible: true, body: event.target.value })} placeholder="pl. Stabil fix rész + mérhető bónusz" value={compensationDetail} /></label>
+          <label className="admin-field" data-quick-fact="location">Helyszín<input className="admin-input" onChange={(event) => field("city", event.target.value)} placeholder="pl. Nagytarcsa" value={fields.city} /></label>
+          <label className="admin-field" data-quick-fact="address">Pontos cím / kiegészítés<input className="admin-input" onChange={(event) => field("workplaceAddress", event.target.value)} value={fields.workplaceAddress} /></label>
+          <label className="admin-field" data-quick-fact="schedule">Munkarend<input className="admin-input" onChange={(event) => field("employmentFraction", event.target.value)} placeholder="pl. Teljes munkaidő" value={fields.employmentFraction} /></label>
+          <label className="admin-field" data-quick-fact="work-schedule">Beosztás<input className="admin-input" onChange={(event) => field("workSchedule", event.target.value)} placeholder="pl. hétfő–péntek" value={fields.workSchedule} /></label>
+          <label className="admin-field" data-quick-fact="contract">Szerződés / foglalkoztatás<input className="admin-input" onChange={(event) => field("employmentType", event.target.value)} placeholder="pl. Határozatlan idejű" value={fields.employmentType} /></label>
+          <label className="admin-field" data-quick-fact="start">Kezdés<input className="admin-input" onChange={(event) => updateFact("schedule", "Kezdés", event.target.value)} placeholder="pl. Megegyezés szerint" value={factValue("schedule", "kezd")} /></label>
+          <label className="admin-field" data-quick-fact="commute">Bejárás<input className="admin-input" onChange={(event) => updateFact("schedule", "Bejárás", event.target.value)} placeholder="pl. Saját autó szükséges" value={factValue("schedule", "bejár")} /></label>
+          <label className="admin-field" data-quick-fact="main-requirement">Fő feltétel<input className="admin-input" onChange={(event) => updateMainRequirement(event.target.value)} placeholder="A legfontosabb elvárás" value={mainRequirement} /><small>Az „Amit kérünk” blokk első eleme is ez lesz.</small></label>
         </div>
       </section>
 
