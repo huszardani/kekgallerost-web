@@ -309,6 +309,31 @@ type EmailTemplateRow = {
   updated_at: string;
 };
 
+type CompanyLeadRow = {
+  id: string;
+  created_at: string;
+  status: string;
+  source: string;
+  request_id: string;
+  company: string;
+  contact_name: string;
+  email: string;
+  phone: string;
+  call_time: string | null;
+  role: string;
+  headcount: number;
+  location: string;
+  start_urgency: string;
+  shifts: string[];
+  has_salary: string;
+  salary: string | null;
+  requirements: string[];
+  must_know: string | null;
+  main_problems: string[];
+  advertised_before: string | null;
+  package: string | null;
+  notes: string | null;
+};
 type TableDefinition<Row, Insert, Update = Partial<Insert>> = {
   Row: Row;
   Insert: Insert;
@@ -320,6 +345,7 @@ export type Database = {
   public: {
     Tables: {
       companies: TableDefinition<CompanyRow, Partial<Omit<CompanyRow, "id" | "created_at" | "updated_at" | "is_active">> & Pick<CompanyRow, "name" | "slug">>;
+      company_leads: TableDefinition<CompanyLeadRow, Omit<CompanyLeadRow, "id" | "created_at">>;
       profiles: TableDefinition<ProfileRow, Partial<Omit<ProfileRow, "created_at" | "updated_at" | "is_active">> & Pick<ProfileRow, "id" | "email" | "role">>;
       jobs: TableDefinition<JobRow, Partial<Omit<JobRow, "id" | "created_at" | "updated_at">> & Pick<JobRow, "company_id" | "title" | "slug">>;
       job_content_blocks: TableDefinition<JobContentBlockRow, Partial<Omit<JobContentBlockRow, "id" | "created_at" | "updated_at">> & Pick<JobContentBlockRow, "job_id" | "block_type">>;
@@ -354,6 +380,7 @@ export type Database = {
 };
 
 export type Company = CompanyRow;
+export type CompanyLead = CompanyLeadRow;
 export type Profile = ProfileRow;
 export type Job = JobRow;
 export type JobContentBlock = JobContentBlockRow;
