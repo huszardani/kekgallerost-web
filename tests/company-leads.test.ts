@@ -71,6 +71,7 @@ test("a kliens és API csak igazolt mentés után jelez sikert", () => {
   assert.ok(app.indexOf("await fetch") < app.indexOf("Köszönjük, megkaptuk a briefet."));
   assert.ok(app.indexOf("Köszönjük, megkaptuk a briefet.") < app.indexOf("form.reset()"));
   assert.match(app, /if \(isSubmitting\) return/);
-  assert.match(route, /select\("id"\)/);
-  assert.match(route, /return NextResponse\.json\(\{ ok: true, leadId \}/);
+  assert.match(route, /persistCompanyLeadAndNotify/);
+  assert.match(route, /sendCompanyLeadNotification/);
+  assert.match(route, /status: result\.created \? 201 : 200/);
 });
