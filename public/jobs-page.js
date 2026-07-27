@@ -50,7 +50,7 @@ function renderJobs() {
   filteredJobs.forEach((job) => {
     const card = document.createElement("a");
     card.className = "job-tile";
-    card.href = `/allasok/${encodeURIComponent(job.slug || job.id)}`;
+    card.href = `/allas/${encodeURIComponent(job.slug || job.id)}`;
     card.setAttribute("aria-label", `${job.title} részletei és jelentkezés`);
     card.innerHTML = `
       <div class="job-card-top">

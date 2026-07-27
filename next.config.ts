@@ -1,16 +1,13 @@
 ﻿import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  skipTrailingSlashRedirect: true,
   async rewrites() {
     return {
       beforeFiles: [
         {
           source: "/",
           destination: "/index.html"
-        },
-        {
-          source: "/allasok/:slug",
-          destination: "/allasok/:slug/index.html"
         },
         {
           source: "/jogi-dokumentumok",
