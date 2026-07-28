@@ -53,10 +53,10 @@ export default function PublicSiteFrame({ children, detail = false }: PublicSite
           <Link href="/#faq">GYIK</Link>
         </nav>
         <nav aria-label="Jogi információk" className="kg-legal-links">
-          <Link href="/jogi-dokumentumok#adatkezeles">Adatkezelés</Link>
-          <Link href="/jogi-dokumentumok#cookie">Cookie tájékoztató</Link>
-          <Link href="/jogi-dokumentumok#aszf">ÁSZF</Link>
           <Link href="/jogi-dokumentumok#impresszum">Impresszum</Link>
+          <Link href="/jogi-dokumentumok#aszf">Általános Szerződési Feltételek</Link>
+          <Link href="/jogi-dokumentumok#adatkezelesi-tajekoztato">Adatkezelési tájékoztató</Link>
+          <Link href="/jogi-dokumentumok#sutikezelesi-tajekoztato">Sütikezelési tájékoztató</Link>
         </nav>
       </footer>
     </div>
