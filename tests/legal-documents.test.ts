@@ -15,6 +15,21 @@ const publicDocuments = [
   "sutikezelesi-tajekoztato",
 ] as const;
 
+test("the legal page uses the canonical root-relative stylesheet path", () => {
+  assert.match(
+    legalHtml,
+    /<link rel="stylesheet" href="\/jogi-dokumentumok\/legal\.css">/,
+  );
+  assert.doesNotMatch(legalHtml, /<link rel="stylesheet" href="legal\.css">/);
+  assert.equal(
+    new URL(
+      "/jogi-dokumentumok/legal.css",
+      "https://kekgallerost.hu/jogi-dokumentumok",
+    ).pathname,
+    "/jogi-dokumentumok/legal.css",
+  );
+});
+
 const footerFiles = [
   "public/index.html",
   "public/allasok/index.html",
