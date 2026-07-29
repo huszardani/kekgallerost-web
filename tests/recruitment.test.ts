@@ -22,6 +22,7 @@ const adminCss = read("src/app/admin/admin.css");
 const mediaRoute = read("src/app/api/admin/job-media/route.ts");
 const emailSource = read("src/lib/email/application-confirmation.ts");
 const fileRoute = read("src/app/api/files/[fileId]/route.ts");
+const partnerDashboard = read("src/app/partner/dashboard.tsx");
 const crmMigration = read("supabase/migrations/202607180001_admin_crm.sql");
 const dynamicMigration = read("supabase/migrations/202607200001_dynamic_job_pages.sql");
 
@@ -181,9 +182,22 @@ test("az e-mail-küldés idempotens, hibája nem törli a jelentkezést", () => 
   assert.equal(applicationRoute.indexOf('from("applications").delete', sendIndex), -1);
 });
 
-test("jelentkezői dokumentumot csak admin tölthet le", () => {
-  assert.match(fileRoute, /profile\.role !== "admin"/);
-  assert.match(fileRoute, /status: 403/);
+test("a jelentkezői dokumentum letöltése adminnak és a saját cég partnerének biztonságos", () => {
+  assert.match(fileRoute, /if \(!profile\).*status: 401/);
+  assert.match(fileRoute, /profile\.role !== "admin" && \(profile\.role !== "partner" \|\| !profile\.company_id\)/);
+  assert.match(fileRoute, /from\("uploaded_files"\)[\s\S]*?select\("application_id, storage_bucket, storage_path"\)[\s\S]*?eq\("storage_bucket", "application-files"\)/);
+  assert.match(fileRoute, /from\("applications"\)[\s\S]*?select\("job_id"\)[\s\S]*?eq\("id", file\.application_id\)/);
+  assert.match(fileRoute, /file\.storage_path\.startsWith\(`applications\/\$\{file\.application_id\}\//);
+  assert.match(fileRoute, /if \(profile\.role === "partner"\)[\s\S]*?from\("jobs"\)[\s\S]*?eq\("company_id", companyId\)/);
+  assert.match(fileRoute, /createSignedUrl\(file\.storage_path, 60\)/);
+  assert.equal(fileRoute.indexOf("createSignedUrl"), fileRoute.lastIndexOf("createSignedUrl"));
+  const signedUrlIndex = fileRoute.indexOf("createSignedUrl");
+  assert.ok(signedUrlIndex > fileRoute.indexOf("profile.role === \"partner\""));
+  assert.ok(signedUrlIndex > fileRoute.indexOf("file.storage_path.startsWith"));
+  assert.match(fileRoute, /status: 400/);
+  assert.match(fileRoute, /status: 404/);
+  assert.match(partnerDashboard, /files\.filter\(\(file\) => file\.application_id === application\.id\)/);
+  assert.match(partnerDashboard, /href=\{`\/api\/files\/\$\{file\.id\}`\}/);
 });
 
 test("az ismételt gyors beküldést a szerver blokkolja", () => {
