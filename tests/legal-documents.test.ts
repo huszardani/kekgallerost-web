@@ -127,3 +127,14 @@ test("a mobil- és nyomtatási stílus nem okoz dokumentumszintű vízszintes t�
   assert.match(legalCss, /scroll-margin-top:/);
   assert.match(legalCss, /@media print/);
 });
+
+test("legal headings stay on one line and legal surfaces use solid colors", () => {
+  assert.match(legalCss, /\.legal-hero h1\s*\{[\s\S]*?white-space:\s*nowrap/);
+  assert.match(legalCss, /\.legal-toc h2\s*\{[\s\S]*?white-space:\s*nowrap/);
+  assert.match(legalCss, /\.legal-hero\s*\{[\s\S]*?background:\s*var\(--legal-navy\)/);
+  assert.match(
+    legalCss,
+    /\.legal-toc \.toc-documents\s*\{[\s\S]*?background:\s*var\(--legal-background\)/,
+  );
+  assert.doesNotMatch(legalCss, /(?:linear|radial)-gradient/);
+});
