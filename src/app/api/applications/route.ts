@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { activateScheduledJobs } from "@/lib/job-data";
 import { sendApplicationConfirmationEmail } from "@/lib/email/application-confirmation";
+import { sendApplicationNotificationEmails } from "@/lib/email/application-notifications";
 import { answerMatchesRule, isAllowedGeneralFile, isAllowedResume, sanitizeFilename } from "@/lib/recruitment";
 import { createServiceSupabaseClient } from "@/lib/supabase/server";
 import type { Json, JobQuestion } from "@/lib/supabase/database.types";
@@ -152,5 +153,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "A jelentkezés mentése megszakadt. Kérjük, próbáld újra." }, { status: 500 });
   }
   const email = await sendApplicationConfirmationEmail({ id: application.id });
+  await sendApplicationNotificationEmails(application.id);
   return NextResponse.json({ ok: true, applicationId: application.id, emailStatus: email.status }, { status: 201 });
 }
