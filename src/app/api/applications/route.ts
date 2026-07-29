@@ -4,6 +4,7 @@ import { sendApplicationConfirmationEmail } from "@/lib/email/application-confir
 import { sendApplicationNotificationEmails } from "@/lib/email/application-notifications";
 import { answerMatchesRule, isAllowedGeneralFile, isAllowedResume, sanitizeFilename } from "@/lib/recruitment";
 import { createServiceSupabaseClient } from "@/lib/supabase/server";
+import { requestIp, verifyTurnstile } from "@/lib/turnstile";
 import type { Json, JobQuestion } from "@/lib/supabase/database.types";
 
 function textValue(formData: FormData, key: string, max = 5000) { return String(formData.get(key) ?? "").trim().slice(0, max); }
@@ -47,6 +48,8 @@ export async function POST(request: Request) {
   let formData: FormData;
   try { formData = await request.formData(); } catch { return NextResponse.json({ error: "Érvénytelen űrlap." }, { status: 400 }); }
   if (textValue(formData, "website")) return NextResponse.json({ ok: true }, { status: 201 });
+  const turnstile = await verifyTurnstile({ token: textValue(formData, "turnstile_token", 2048), expectedAction: "job_application", remoteIp: requestIp(request) });
+  if (!turnstile.ok) return NextResponse.json({ error: turnstile.message }, { status: 400 });
   const jobId = textValue(formData, "job_id", 100);
   const applicantName = textValue(formData, "applicant_name", 150);
   const applicantEmail = textValue(formData, "applicant_email", 254).toLowerCase();

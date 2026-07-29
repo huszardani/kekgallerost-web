@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Script from "next/script";
 import { useState } from "react";
 import type { JobQuestion, JobQuestionOption, Json } from "@/lib/supabase/database.types";
 
@@ -43,10 +44,10 @@ export default function ApplicationForm({ jobId, questions, questionOptions, res
     try {
       const response = await fetch("/api/applications", { method: "POST", body: new FormData(form) });
       const result = (await response.json()) as { error?: string };
-      if (!response.ok) { setState({ status: "error", message: result.error ?? "A jelentkezés nem küldhető el." }); return; }
+      if (!response.ok) { (window as Window & { turnstile?: { reset: () => void } }).turnstile?.reset(); setState({ status: "error", message: result.error ?? "A jelentkezés nem küldhető el." }); return; }
       form.reset();
       setState({ status: "success", message: "Köszönjük! A jelentkezésed megérkezett, a visszaigazolást e-mailben küldjük." });
-    } catch {
+    } catch { (window as Window & { turnstile?: { reset: () => void } }).turnstile?.reset();
       setState({ status: "error", message: "Hálózati hiba történt. Ellenőrizd a kapcsolatot, majd próbáld újra." });
     }
   }
@@ -90,6 +91,7 @@ export default function ApplicationForm({ jobId, questions, questionOptions, res
     </fieldset>
 
     <label className="checkbox-label consent-row"><input name="consent_accepted" required type="checkbox" /> <span>Hozzájárulok, hogy a jelentkezési adataimat a kiválasztott munkáltató megkapja. Elolvastam az <Link href="/jogi-dokumentumok" target="_blank">adatkezelési tájékoztatót</Link>.</span></label>
+    {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? <div className="turnstile-wrap"><Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" /><div className="cf-turnstile" data-action="job_application" data-response-field-name="turnstile_token" data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} data-size="flexible" /></div> : <p className="alert error" role="alert">A biztonsági ellenőrzés nem érhető el. Kérjük, próbáld később.</p>}
     {state.status === "error" ? <p className="alert error" role="alert">{state.message}</p> : null}
     <button className="button" disabled={state.status === "sending"} type="submit">{state.status === "sending" ? "Küldés…" : "Jelentkezés elküldése"}</button>
   </form>;
