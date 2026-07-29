@@ -1,19 +1,38 @@
 import { NextResponse } from "next/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { authorizeApplicationFileDownload } from "@/lib/application-file-download";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type FileRouteProps = { params: Promise<{ fileId: string }> };
 
 export async function GET(_request: Request, { params }: FileRouteProps) {
   const profile = await getCurrentProfile();
-  if (!profile) return NextResponse.json({ error: "Nincs bejelentkezve." }, { status: 401 });
-  if (profile.role !== "admin") return NextResponse.json({ error: "A dokumentumot csak adminisztrátor töltheti le." }, { status: 403 });
   const { fileId } = await params;
-  if (!/^[0-9a-f-]{36}$/i.test(fileId)) return NextResponse.json({ error: "Érvénytelen fájlazonosító." }, { status: 400 });
   const supabase = await createServerSupabaseClient();
-  const { data: file, error } = await supabase.from("uploaded_files").select("storage_bucket, storage_path").eq("id", fileId).single();
-  if (error || !file) return NextResponse.json({ error: "A fájl nem található." }, { status: 404 });
-  const { data: signed, error: signedError } = await supabase.storage.from(file.storage_bucket).createSignedUrl(file.storage_path, 60);
-  if (signedError) return NextResponse.json({ error: "A letöltési link nem hozható létre." }, { status: 403 });
-  return NextResponse.redirect(signed.signedUrl);
+  const result = await authorizeApplicationFileDownload(profile, fileId, {
+    async getFile(id) {
+      const { data, error } = await supabase
+        .from("uploaded_files")
+        .select("application_id, storage_bucket, storage_path")
+        .eq("id", id)
+        .single();
+      return error || !data ? null : { applicationId: data.application_id, storageBucket: data.storage_bucket, storagePath: data.storage_path };
+    },
+    async getApplication(applicationId) {
+      const { data, error } = await supabase.from("applications").select("job_id").eq("id", applicationId).single();
+      return error || !data ? null : { jobId: data.job_id };
+    },
+    async getJob(jobId, companyId) {
+      const { data, error } = await supabase.from("jobs").select("company_id").eq("id", jobId).eq("company_id", companyId).single();
+      return error || !data ? null : { companyId: data.company_id };
+    },
+    async createSignedUrl(bucket, path) {
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60);
+      return error || !data ? null : data.signedUrl;
+    }
+  });
+
+  return result.kind === "signed"
+    ? NextResponse.redirect(result.signedUrl)
+    : NextResponse.json({ error: result.error }, { status: result.status });
 }

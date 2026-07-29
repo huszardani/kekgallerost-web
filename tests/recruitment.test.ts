@@ -6,6 +6,7 @@ import {
   isAllowedJobImage, isAllowedResume, isValidSlug, jobStatuses, maxJobImageSize,
   maxResumeSize, normalizeList, questionTypes, sanitizeFilename
 } from "../src/lib/recruitment.ts";
+import { authorizeApplicationFileDownload, type ApplicationFileDownloadDependencies } from "../src/lib/application-file-download.ts";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const applicationRoute = read("src/app/api/applications/route.ts");
@@ -21,7 +22,7 @@ const publicJobsCss = read("src/app/public-jobs.css");
 const adminCss = read("src/app/admin/admin.css");
 const mediaRoute = read("src/app/api/admin/job-media/route.ts");
 const emailSource = read("src/lib/email/application-confirmation.ts");
-const fileRoute = read("src/app/api/files/[fileId]/route.ts");
+const partnerDashboard = read("src/app/partner/dashboard.tsx");
 const crmMigration = read("supabase/migrations/202607180001_admin_crm.sql");
 const dynamicMigration = read("supabase/migrations/202607200001_dynamic_job_pages.sql");
 
@@ -181,9 +182,105 @@ test("az e-mail-küldés idempotens, hibája nem törli a jelentkezést", () => 
   assert.equal(applicationRoute.indexOf('from("applications").delete', sendIndex), -1);
 });
 
-test("jelentkezői dokumentumot csak admin tölthet le", () => {
-  assert.match(fileRoute, /profile\.role !== "admin"/);
-  assert.match(fileRoute, /status: 403/);
+const fileDownloadId = "00000000-0000-4000-8000-000000000001";
+const applicationId = "00000000-0000-4000-8000-000000000002";
+const jobId = "00000000-0000-4000-8000-000000000003";
+const ownCompanyId = "00000000-0000-4000-8000-000000000004";
+const otherCompanyId = "00000000-0000-4000-8000-000000000005";
+
+type DownloadFixture = {
+  file?: { applicationId: string; storageBucket: string; storagePath: string } | null;
+  application?: { jobId: string } | null;
+  job?: { companyId: string } | null;
+  signedUrl?: string | null;
+};
+
+function createDownloadDependencies(fixture: DownloadFixture = {}) {
+  const calls = { file: 0, application: 0, job: 0, signed: 0 };
+  const order: string[] = [];
+  const file = fixture.file === undefined
+    ? { applicationId, storageBucket: "application-files", storagePath: `applications/${applicationId}/synthetic-test.pdf` }
+    : fixture.file;
+  const application = fixture.application === undefined ? { jobId } : fixture.application;
+  const job = fixture.job === undefined ? { companyId: ownCompanyId } : fixture.job;
+  const signedUrl = fixture.signedUrl === undefined ? "https://storage.example.test/signed" : fixture.signedUrl;
+  const dependencies: ApplicationFileDownloadDependencies = {
+    async getFile() { calls.file += 1; order.push("file"); return file; },
+    async getApplication() { calls.application += 1; order.push("application"); return application; },
+    async getJob() { calls.job += 1; order.push("job"); return job; },
+    async createSignedUrl() { calls.signed += 1; order.push("signed"); return signedUrl; }
+  };
+  return { calls, dependencies, order };
+}
+
+test("a jelentkezői dokumentum letöltési jogosultsága végrehajthatóan ellenőrzött", async (t) => {
+  await t.test("be nem jelentkezett felhasználó 401-et kap, signed URL nélkül", async () => {
+    const fixture = createDownloadDependencies();
+    const result = await authorizeApplicationFileDownload(null, fileDownloadId, fixture.dependencies);
+    assert.deepEqual(result, { kind: "error", status: 401, error: "Nincs bejelentkezve." });
+    assert.equal(fixture.calls.signed, 0);
+  });
+
+  await t.test("admin szabályos fájljához signed URL készül", async () => {
+    const fixture = createDownloadDependencies();
+    const result = await authorizeApplicationFileDownload({ role: "admin", company_id: null }, fileDownloadId, fixture.dependencies);
+    assert.deepEqual(result, { kind: "signed", signedUrl: "https://storage.example.test/signed" });
+    assert.equal(fixture.calls.signed, 1);
+  });
+
+  await t.test("saját céges partner szabályos fájljához signed URL készül", async () => {
+    const fixture = createDownloadDependencies();
+    const result = await authorizeApplicationFileDownload({ role: "partner", company_id: ownCompanyId }, fileDownloadId, fixture.dependencies);
+    assert.equal(result.kind, "signed");
+    assert.equal(fixture.calls.signed, 1);
+    assert.deepEqual(fixture.order, ["file", "application", "job", "signed"]);
+  });
+
+  await t.test("másik cég partnere 404-et kap signed URL nélkül", async () => {
+    const fixture = createDownloadDependencies({ job: { companyId: otherCompanyId } });
+    const result = await authorizeApplicationFileDownload({ role: "partner", company_id: ownCompanyId }, fileDownloadId, fixture.dependencies);
+    assert.equal(result.kind, "error");
+    assert.equal(result.status, 404);
+    assert.equal(fixture.calls.signed, 0);
+  });
+
+  await t.test("company_id nélküli partner 404-et kap signed URL nélkül", async () => {
+    const fixture = createDownloadDependencies();
+    const result = await authorizeApplicationFileDownload({ role: "partner", company_id: null }, fileDownloadId, fixture.dependencies);
+    assert.equal(result.kind, "error");
+    assert.equal(result.status, 404);
+    assert.equal(fixture.calls.file, 0);
+    assert.equal(fixture.calls.signed, 0);
+  });
+
+  await t.test("hibás UUID 400-at, hiányzó fájl és adatbázishiba 404-et ad", async () => {
+    const invalidFixture = createDownloadDependencies();
+    const invalid = await authorizeApplicationFileDownload({ role: "admin", company_id: null }, "invalid", invalidFixture.dependencies);
+    assert.equal(invalid.kind, "error");
+    assert.equal(invalid.status, 400);
+    assert.equal(invalidFixture.calls.signed, 0);
+    for (const fixture of [createDownloadDependencies({ file: null }), createDownloadDependencies({ application: null })]) {
+      const result = await authorizeApplicationFileDownload({ role: "admin", company_id: null }, fileDownloadId, fixture.dependencies);
+      assert.equal(result.kind, "error");
+      assert.equal(result.status, 404);
+      assert.equal(fixture.calls.signed, 0);
+    }
+  });
+
+  await t.test("nem engedélyezett bucket és hibás storage path 404-et ad", async () => {
+    for (const fixture of [
+      createDownloadDependencies({ file: { applicationId, storageBucket: "other-bucket", storagePath: `applications/${applicationId}/synthetic-test.pdf` } }),
+      createDownloadDependencies({ file: { applicationId, storageBucket: "application-files", storagePath: "applications/other/synthetic-test.pdf" } })
+    ]) {
+      const result = await authorizeApplicationFileDownload({ role: "admin", company_id: null }, fileDownloadId, fixture.dependencies);
+      assert.equal(result.kind, "error");
+      assert.equal(result.status, 404);
+      assert.equal(fixture.calls.signed, 0);
+    }
+  });
+
+  assert.match(partnerDashboard, /files\.filter\(\(file\) => file\.application_id === application\.id\)/);
+  assert.match(partnerDashboard, /href=\{`\/api\/files\/\$\{file\.id\}`\}/);
 });
 
 test("az ismételt gyors beküldést a szerver blokkolja", () => {
