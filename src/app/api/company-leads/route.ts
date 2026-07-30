@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { validateCompanyLead } from "@/lib/company-leads";
 import { createServiceSupabaseClient } from "@/lib/supabase/server";
+import { requestIp, verifyTurnstile } from "@/lib/turnstile";
 
 const FAILURE_MESSAGE = "A beküldés most nem sikerült. Az adataid megmaradtak, kérjük, próbáld újra.";
 
@@ -16,6 +17,11 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: "Érvénytelen űrlapadatok." }, { status: 400 });
   }
+
+  const tokenCandidate = typeof body === "object" && body !== null ? (body as Record<string, unknown>).turnstileToken : null;
+  const token = typeof tokenCandidate === "string" ? tokenCandidate : "";
+  const turnstile = await verifyTurnstile({ token, expectedAction: "company_interest", remoteIp: requestIp(request) });
+  if (!turnstile.ok) return NextResponse.json({ ok: false, error: turnstile.message }, { status: 400 });
 
   const validation = validateCompanyLead(body);
   if ("error" in validation) {

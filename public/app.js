@@ -9,6 +9,21 @@
   const requiredGroups = ["shift", "mainProblem"];
   let isSubmitting = false;
   let submissionId = null;
+  let turnstileToken = "";
+  let turnstileWidgetId = null;
+
+  async function initializeTurnstile() {
+    const container = document.querySelector("#companyTurnstile");
+    if (!container) return;
+    try {
+      const config = await fetch("/api/turnstile-config", { cache: "no-store" }).then((response) => response.ok ? response.json() : Promise.reject());
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script"); script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"; script.async = true; script.onload = resolve; script.onerror = reject; document.head.append(script);
+      });
+      turnstileWidgetId = window.turnstile.render(container, { sitekey: config.siteKey, action: "company_interest", size: "flexible", callback: (token) => { turnstileToken = token; }, "expired-callback": () => { turnstileToken = ""; }, "error-callback": () => { turnstileToken = ""; } });
+    } catch { container.textContent = "A biztonsági ellenőrzés nem érhető el. Kérjük, próbáld később."; }
+  }
+  initializeTurnstile();
 
   function validateRequiredGroups() {
     let valid = true;
@@ -50,6 +65,7 @@
 
     validateRequiredGroups();
     if (!form.reportValidity()) return;
+    if (!turnstileToken) { message.textContent = "Kérjük, várd meg a biztonsági ellenőrzést, majd próbáld újra."; message.classList.add("form-message-error"); return; }
 
     isSubmitting = true;
     submissionId ||= crypto.randomUUID();
@@ -82,7 +98,8 @@
       mainProblem: values(formData, "mainProblem"),
       advertisedBefore: value(formData, "advertisedBefore"),
       package: value(formData, "package"),
-      notes: value(formData, "notes")
+      notes: value(formData, "notes"),
+      turnstileToken
     };
 
     try {
@@ -94,6 +111,7 @@
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.ok || !result.leadId) {
+        if (turnstileWidgetId !== null) { window.turnstile.reset(turnstileWidgetId); turnstileToken = ""; }
         throw new Error(result.error || "A beküldés most nem sikerült. Kérjük, próbáld újra.");
       }
 
