@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { activateScheduledJobs } from "@/lib/job-data";
-import { sendApplicationConfirmationEmail } from "@/lib/email/application-confirmation";
-import { sendApplicationNotificationEmails } from "@/lib/email/application-notifications";
+import { queueAndProcessApplicationEmails } from "@/lib/email/application-email-queue";
+import { runPostPersistenceEmailWorkflow } from "@/lib/email/application-email-workflow";
 import { answerMatchesRule, isAllowedGeneralFile, isAllowedResume, sanitizeFilename } from "@/lib/recruitment";
 import { createServiceSupabaseClient } from "@/lib/supabase/server";
 import { requestIp, verifyTurnstile } from "@/lib/turnstile";
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
     await supabase.from("applications").delete().eq("id", application.id);
     return NextResponse.json({ error: "A jelentkezés mentése megszakadt. Kérjük, próbáld újra." }, { status: 500 });
   }
-  const email = await sendApplicationConfirmationEmail({ id: application.id });
-  await sendApplicationNotificationEmails(application.id);
-  return NextResponse.json({ ok: true, applicationId: application.id, emailStatus: email.status }, { status: 201 });
+  const { emailStatus } = await runPostPersistenceEmailWorkflow(() => queueAndProcessApplicationEmails(application.id, job.company_id, applicantEmail));
+  if (emailStatus === "pending") console.error("Application email workflow failed", { reason: "queue_or_initial_delivery_failed" });
+  return NextResponse.json({ ok: true, applicationId: application.id, emailStatus }, { status: 201 });
 }
