@@ -25,7 +25,7 @@ const emailSource = read("src/lib/email/application-email-queue.ts");
 const partnerDashboard = read("src/app/partner/dashboard.tsx");
 const crmMigration = read("supabase/migrations/202607180001_admin_crm.sql");
 const dynamicMigration = read("supabase/migrations/202607200001_dynamic_job_pages.sql");
-const emailRetryMigration = read("supabase/migrations/202608110001_application_email_delivery_retries.sql");
+const emailRetryMigration = read("supabase/migrations/202608140001_application_email_delivery_retry_hardening.sql");
 
 test("csak aktív állás fogadhat publikus jelentkezést", () => {
   assert.match(applicationRoute, /\.eq\("status", "published"\)/);

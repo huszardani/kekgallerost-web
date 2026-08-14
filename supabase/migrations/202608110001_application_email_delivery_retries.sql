@@ -14,15 +14,12 @@ alter table public.email_logs
   add column if not exists locked_by uuid,
   add column if not exists error_code text;
 
-alter table public.applications
-  add column if not exists email_delivery_requested_at timestamptz;
-
 alter table public.email_logs
   drop constraint if exists email_logs_recipient_role_check,
   add constraint email_logs_recipient_role_check
     check (recipient_role is null or recipient_role in ('applicant', 'admin', 'partner')),
   drop constraint if exists email_logs_attempt_count_check,
-  add constraint email_logs_attempt_count_check check (attempt_count between 0 and 3);
+  add constraint email_logs_attempt_count_check check (attempt_count between 0 and 4);
 
 create index if not exists email_logs_due_delivery_idx
   on public.email_logs(next_attempt_at, created_at)
@@ -31,7 +28,7 @@ create index if not exists email_logs_due_delivery_idx
 create table if not exists public.email_delivery_attempts (
   id uuid primary key default gen_random_uuid(),
   email_log_id uuid not null references public.email_logs(id) on delete cascade,
-  attempt_number integer not null check (attempt_number between 1 and 3),
+  attempt_number integer not null check (attempt_number between 1 and 4),
   status text not null check (status in ('started', 'sent', 'retry_scheduled', 'failed')),
   attempted_at timestamptz not null default now(),
   completed_at timestamptz,
@@ -60,41 +57,10 @@ begin
 end;
 $$;
 
-create or replace function public.enqueue_application_email_deliveries(
-  p_application_id uuid,
-  p_company_id uuid,
-  p_applicant_email text,
-  p_admin_email text,
-  p_from_email text
-)
-returns boolean
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  insert into public.email_logs (
-    application_id, company_id, provider, from_email, to_email, subject,
-    template_key, delivery_key, recipient_role, status, next_attempt_at
-  )
-  select p_application_id, p_company_id, 'resend', p_from_email,
-    case role when 'applicant' then p_applicant_email when 'admin' then p_admin_email else null end,
-    'Jelentkezési e-mail előkészítése',
-    case role when 'applicant' then 'application_confirmation' when 'admin' then 'application_notification_admin' else 'application_notification_partner' end,
-    'application_email:' || role || ':' || p_application_id::text,
-    role, 'queued'::public.email_log_status, now()
-  from unnest(array['applicant', 'admin', 'partner']) as role
-  on conflict (delivery_key) where delivery_key is not null do nothing;
-  return true;
-end;
-$$;
-
 create or replace function public.claim_due_application_email_deliveries(
   p_worker_id uuid,
   p_limit integer default 20,
-  p_application_id uuid default null,
-  p_admin_email text default null,
-  p_from_email text default ''
+  p_application_id uuid default null
 )
 returns table (
   id uuid,
@@ -110,25 +76,6 @@ security definer
 set search_path = public
 as $$
 begin
-  -- The application row records the durable delivery request. Recreate missing
-  -- queue rows here if the initial enqueue operation failed after persistence.
-  insert into public.email_logs (
-    application_id, company_id, provider, from_email, to_email, subject,
-    template_key, delivery_key, recipient_role, status, next_attempt_at
-  )
-  select applications.id, jobs.company_id, 'resend', p_from_email,
-    case role when 'applicant' then applications.applicant_email when 'admin' then p_admin_email else null end,
-    'Jelentkezési e-mail előkészítése',
-    case role when 'applicant' then 'application_confirmation' when 'admin' then 'application_notification_admin' else 'application_notification_partner' end,
-    'application_email:' || role || ':' || applications.id::text,
-    role, 'queued'::public.email_log_status, now()
-  from public.applications
-  join public.jobs on jobs.id = applications.job_id
-  cross join unnest(array['applicant', 'admin', 'partner']) as role
-  where applications.email_delivery_requested_at is not null
-    and (p_application_id is null or applications.id = p_application_id)
-  on conflict (delivery_key) where delivery_key is not null do nothing;
-
   return query
   with candidates as (
     select logs.id
@@ -136,7 +83,7 @@ begin
     where logs.status = 'queued'
       and logs.next_attempt_at is not null
       and logs.next_attempt_at <= now()
-      and logs.attempt_count < 3
+      and logs.attempt_count < 4
       and logs.application_id is not null
       and logs.recipient_role in ('applicant', 'admin', 'partner')
       and (p_application_id is null or logs.application_id = p_application_id)
@@ -225,11 +172,9 @@ begin
 end;
 $$;
 
-revoke all on function public.enqueue_application_email_deliveries(uuid, uuid, text, text, text) from public;
-revoke all on function public.claim_due_application_email_deliveries(uuid, integer, uuid, text, text) from public;
+revoke all on function public.claim_due_application_email_deliveries(uuid, integer, uuid) from public;
 revoke all on function public.complete_application_email_delivery(uuid, uuid, public.email_log_status, text, text, text, timestamptz) from public;
-grant execute on function public.enqueue_application_email_deliveries(uuid, uuid, text, text, text) to service_role;
-grant execute on function public.claim_due_application_email_deliveries(uuid, integer, uuid, text, text) to service_role;
+grant execute on function public.claim_due_application_email_deliveries(uuid, integer, uuid) to service_role;
 grant execute on function public.complete_application_email_delivery(uuid, uuid, public.email_log_status, text, text, text, timestamptz) to service_role;
 
 comment on table public.email_delivery_attempts is

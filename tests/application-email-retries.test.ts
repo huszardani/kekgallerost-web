@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
@@ -102,13 +103,39 @@ test("sikeres Resend-küldés utáni adatbázishibánál a retry ugyanazt az ide
   assert.equal(providerDeliveries.size, 1);
 });
 
-test("a migráció kompatibilis a részleges unique indexszel, helyreállítja a queue-t és nem aktivál cront", async () => {
-  const sql = await readFile(new URL("../supabase/migrations/202608110001_application_email_delivery_retries.sql", import.meta.url), "utf8");
+test("a korábbi migráció változatlan, az új queue-helyreállítás külön migrációban van és nem aktivál cront", async () => {
+  const originalSql = await readFile(new URL("../supabase/migrations/202608110001_application_email_delivery_retries.sql", import.meta.url), "utf8");
+  const sql = await readFile(new URL("../supabase/migrations/202608140001_application_email_delivery_retry_hardening.sql", import.meta.url), "utf8");
   const cronDefinition = sql.indexOf("create or replace function public.configure_application_email_retry_cron()");
-  assert.notEqual(cronDefinition, -1);
+  assert.equal(createHash("sha256").update(originalSql).digest("hex"), "e91f857dd43b1d09a1b2e3e93605e96da61a378fa4431e3cbfb01616f540f650");
+  assert.match(originalSql, /attempt_count between 0 and 4/);
+  assert.match(originalSql, /attempt_number between 1 and 4/);
+  assert.doesNotMatch(originalSql, /email_delivery_requested_at|enqueue_application_email_deliveries/);
+  assert.equal(cronDefinition, -1);
   assert.match(sql, /on conflict \(delivery_key\) where delivery_key is not null do nothing/);
   assert.match(sql, /applications\.email_delivery_requested_at is not null/);
-  assert.doesNotMatch(sql.slice(0, cronDefinition), /configure_application_email_retry_cron\s*\(\s*\)\s*;/);
+  assert.match(sql, /logs\.attempt_count < 3/);
+  assert.doesNotMatch(sql, /attempt_count between 0 and 3|attempt_number between 1 and 3/);
+});
+
+test("a hardening migráció megőrzi a történeti négyes próbálkozások auditértékét", async () => {
+  const sql = await readFile(new URL("../supabase/migrations/202608140001_application_email_delivery_retry_hardening.sql", import.meta.url), "utf8");
+  assert.doesNotMatch(sql, /delete\s+from\s+public\.(?:email_logs|email_delivery_attempts)\b/i);
+  assert.doesNotMatch(sql, /set\s+(?:attempt_count|attempt_number)\s*=\s*[0-3]\b/i);
+  assert.doesNotMatch(sql, /drop\s+constraint\s+(?:if\s+exists\s+)?email_logs_attempt_count_check/i);
+  assert.match(sql, /drop function if exists public\.claim_due_application_email_deliveries\(uuid, integer, uuid\)/);
+});
+
+test("a jelentkezési API által használt oszlopot és RPC-ket az új migráció létrehozza", async () => {
+  const route = await readFile(new URL("../src/app/api/applications/route.ts", import.meta.url), "utf8");
+  const queue = await readFile(new URL("../src/lib/email/application-email-queue.ts", import.meta.url), "utf8");
+  const sql = await readFile(new URL("../supabase/migrations/202608140001_application_email_delivery_retry_hardening.sql", import.meta.url), "utf8");
+  assert.match(route, /email_delivery_requested_at/);
+  assert.match(queue, /enqueue_application_email_deliveries/);
+  assert.match(queue, /claim_due_application_email_deliveries/);
+  assert.match(sql, /add column if not exists email_delivery_requested_at/);
+  assert.match(sql, /create or replace function public\.enqueue_application_email_deliveries/);
+  assert.match(sql, /create or replace function public\.claim_due_application_email_deliveries/);
 });
 
 test("a Resend-kérés a tartós delivery keyt szolgáltatói idempotenciakulcsként küldi", async () => {
