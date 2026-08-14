@@ -134,7 +134,7 @@ function resendFailure(error: unknown): SafeDeliveryFailure {
   return { code: retryable ? "provider_temporarily_unavailable" : "provider_rejected_permanently", message: retryable ? "Az e-mail-szolgáltató átmenetileg nem elérhető." : "Az e-mail-szolgáltató véglegesen elutasította a kérést.", retryable };
 }
 
-async function completeDelivery(delivery: ClaimedApplicationEmail, status: "queued" | "sent" | "failed", values: { messageId?: string | null; failure?: SafeDeliveryFailure; nextAttemptAt?: string | null }) {
+async function completeDelivery(delivery: ClaimedApplicationEmail, status: "queued" | "sent" | "failed", values: { messageId?: string | null; failure?: SafeDeliveryFailure; nextAttemptAt?: string | null; providerAcceptedAt?: string | null }) {
   const supabase = createServiceSupabaseClient();
   const { data, error } = await supabase.rpc("complete_application_email_delivery", {
     p_email_log_id: delivery.id,
@@ -144,6 +144,7 @@ async function completeDelivery(delivery: ClaimedApplicationEmail, status: "queu
     p_error_code: values.failure?.code ?? null,
     p_error_message: values.failure?.message ?? null,
     p_next_attempt_at: values.nextAttemptAt ?? null,
+    p_provider_accepted_at: values.providerAcceptedAt ?? null,
   });
   if (error || !data) throw failure("delivery_state_update_failed", "Az e-mail-kézbesítés állapota nem frissíthető.", true);
 }
@@ -179,6 +180,7 @@ export async function processDueApplicationEmails(options: { applicationId?: str
     deliveryKey: item.delivery_key,
     attemptCount: item.attempt_count,
     workerId: item.worker_id,
+    providerUncertainSince: item.provider_uncertain_since,
   }));
   if (!deliveries.length) return [];
   return processClaimedApplicationEmails(deliveries, {
@@ -197,7 +199,7 @@ export async function processDueApplicationEmails(options: { applicationId?: str
       return { messageId: sent?.id ?? null };
     },
     markSent: (delivery, messageId) => completeDelivery(delivery, "sent", { messageId }),
-    scheduleRetry: (delivery, retryFailure, nextAttemptAt) => completeDelivery(delivery, "queued", { failure: retryFailure, nextAttemptAt }),
+    scheduleRetry: (delivery, retryFailure, nextAttemptAt, providerAcceptedAt) => completeDelivery(delivery, "queued", { failure: retryFailure, nextAttemptAt, providerAcceptedAt }),
     markFailed: (delivery, finalFailure) => completeDelivery(delivery, "failed", { failure: finalFailure }),
   });
 }

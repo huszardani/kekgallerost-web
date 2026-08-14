@@ -10,6 +10,7 @@ export type ClaimedApplicationEmail = {
   deliveryKey: string;
   attemptCount: number;
   workerId: string;
+  providerUncertainSince?: string | null;
 };
 
 export type PreparedApplicationEmail = {
@@ -39,7 +40,7 @@ export type ApplicationEmailDeliveryDependencies = {
   prepare: (delivery: ClaimedApplicationEmail) => Promise<PreparedApplicationEmail>;
   send: (delivery: ClaimedApplicationEmail, message: PreparedApplicationEmail) => Promise<{ messageId: string | null }>;
   markSent: (delivery: ClaimedApplicationEmail, messageId: string | null) => Promise<void>;
-  scheduleRetry: (delivery: ClaimedApplicationEmail, failure: SafeDeliveryFailure, nextAttemptAt: string) => Promise<void>;
+  scheduleRetry: (delivery: ClaimedApplicationEmail, failure: SafeDeliveryFailure, nextAttemptAt: string, providerAcceptedAt?: string | null) => Promise<void>;
   markFailed: (delivery: ClaimedApplicationEmail, failure: SafeDeliveryFailure) => Promise<void>;
 };
 
@@ -62,10 +63,27 @@ export async function processClaimedApplicationEmail(
   dependencies: ApplicationEmailDeliveryDependencies,
   now = new Date(),
 ) {
+  if (delivery.providerUncertainSince && now.getTime() - new Date(delivery.providerUncertainSince).getTime() >= 24 * 60 * 60_000) {
+    const failure = { code: "manual_review_required", message: "A szolgáltatói átvétel nem igazolható automatikusan; kézi ellenőrzés szükséges.", retryable: false };
+    await dependencies.markFailed(delivery, failure);
+    return { status: "manual_review" as const, role: delivery.role };
+  }
   try {
     const message = await dependencies.prepare(delivery);
     const result = await dependencies.send(delivery, message);
-    await dependencies.markSent(delivery, result.messageId);
+    try {
+      await dependencies.markSent(delivery, result.messageId);
+    } catch {
+      const acceptedAt = delivery.providerUncertainSince ?? now.toISOString();
+      const failure = { code: "provider_success_unconfirmed", message: "A szolgáltató átvette a levelet, de a helyi visszaigazolás sikertelen.", retryable: true };
+      const nextAttemptAt = retryAtForAttempt(delivery.attemptCount, now);
+      if (nextAttemptAt) {
+        await dependencies.scheduleRetry(delivery, failure, nextAttemptAt, acceptedAt);
+        return { status: "pending" as const, role: delivery.role, nextAttemptAt };
+      }
+      await dependencies.markFailed(delivery, { ...failure, code: "manual_review_required", retryable: false });
+      return { status: "manual_review" as const, role: delivery.role };
+    }
     return { status: "sent" as const, role: delivery.role };
   } catch (error) {
     const failure = safeFailure(error);

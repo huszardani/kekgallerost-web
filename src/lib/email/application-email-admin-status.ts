@@ -20,6 +20,7 @@ function safeErrorReason(row: ApplicationEmailStatusRow | undefined) {
   if (!row?.error_code) return row?.status === "failed" ? "A kézbesítés sikertelen." : null;
   if (row.error_code === "recipient_missing_or_invalid") return "A címzett hiányzik vagy érvénytelen.";
   if (row.error_code === "resend_not_configured") return "Az e-mail-küldés nincs konfigurálva.";
+  if (row.error_code === "manual_review_required" || row.error_code === "provider_success_unconfirmed") return "Kézi ellenőrzés szükséges: a szolgáltatói kézbesítés eredménye bizonytalan.";
   if (row.error_code.startsWith("provider_")) return "Az e-mail-szolgáltató nem tudta kézbesíteni a levelet.";
   if (row.error_code.includes("missing") || row.error_code.includes("incomplete")) return "Az e-mailhez szükséges adatok hiányosak.";
   return "Átmeneti feldolgozási hiba.";
@@ -39,7 +40,7 @@ export function applicationEmailAdminStatuses(emails: ApplicationEmailStatusRow[
       role,
       email,
       label: role === "applicant" ? "Jelentkezői visszaigazolás" : role === "partner" ? "Partnerértesítés" : "Adminértesítés",
-      status: email?.status === "sent" ? "elküldve" as const : email?.status === "failed" ? "sikertelen" as const : "függőben" as const,
+      status: email?.error_code === "manual_review_required" ? "kézi ellenőrzés" as const : email?.status === "sent" ? "elküldve" as const : email?.status === "failed" ? "sikertelen" as const : "függőben" as const,
       safeError: safeErrorReason(email),
     };
   });

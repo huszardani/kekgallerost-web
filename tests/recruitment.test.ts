@@ -180,7 +180,7 @@ test("az e-mail-küldés idempotens, hibája nem törli a jelentkezést", () => 
   assert.match(emailRetryMigration, /'application_email:' \|\| role \|\| ':' \|\| p_application_id::text/);
   assert.match(emailRetryMigration, /on conflict \(delivery_key\) where delivery_key is not null do nothing/);
   assert.match(emailSource, /sendIdempotentEmail\([\s\S]*delivery\.deliveryKey/);
-  const sendIndex = applicationRoute.indexOf("const { emailStatus } = await runPostPersistenceEmailWorkflow");
+  const sendIndex = applicationRoute.indexOf("const { emailStatus } = await runPostPersistenceEmailTransition");
   assert.equal(applicationRoute.indexOf('from("applications").delete', sendIndex), -1);
   assert.ok(sendIndex > applicationRoute.lastIndexOf('from("application_answers").insert'));
   assert.ok(sendIndex > applicationRoute.lastIndexOf('from("uploaded_files").insert'));
