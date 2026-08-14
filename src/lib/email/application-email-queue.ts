@@ -4,7 +4,6 @@ import { env } from "@/lib/env";
 import {
   ApplicationEmailFailure,
   processClaimedApplicationEmails,
-  type ApplicationEmailRole,
   type ClaimedApplicationEmail,
   type PreparedApplicationEmail,
   type SafeDeliveryFailure,
@@ -15,18 +14,8 @@ import {
   planApplicationNotificationMessages,
   type ApplicationNotificationInput,
 } from "@/lib/email/application-notification-plan";
-import { createResendClient, getEmailFromAddress } from "@/lib/email/resend";
+import { getEmailFromAddress, sendIdempotentEmail } from "@/lib/email/resend";
 import { createServiceSupabaseClient } from "@/lib/supabase/server";
-
-const roleTemplate: Record<ApplicationEmailRole, string> = {
-  applicant: "application_confirmation",
-  admin: "application_notification_admin",
-  partner: "application_notification_partner",
-};
-
-function deliveryKey(applicationId: string, role: ApplicationEmailRole) {
-  return `application_email:${role}:${applicationId}`;
-}
 
 function failure(code: string, message: string, retryable: boolean): ApplicationEmailFailure {
   return new ApplicationEmailFailure({ code, message, retryable });
@@ -145,7 +134,7 @@ function resendFailure(error: unknown): SafeDeliveryFailure {
   return { code: retryable ? "provider_temporarily_unavailable" : "provider_rejected_permanently", message: retryable ? "Az e-mail-szolgáltató átmenetileg nem elérhető." : "Az e-mail-szolgáltató véglegesen elutasította a kérést.", retryable };
 }
 
-async function completeDelivery(delivery: ClaimedApplicationEmail, status: "queued" | "sent" | "failed", values: { messageId?: string | null; failure?: SafeDeliveryFailure; nextAttemptAt?: string | null }) {
+async function completeDelivery(delivery: ClaimedApplicationEmail, status: "queued" | "sent" | "failed", values: { messageId?: string | null; failure?: SafeDeliveryFailure; nextAttemptAt?: string | null; providerAcceptedAt?: string | null }) {
   const supabase = createServiceSupabaseClient();
   const { data, error } = await supabase.rpc("complete_application_email_delivery", {
     p_email_log_id: delivery.id,
@@ -155,6 +144,7 @@ async function completeDelivery(delivery: ClaimedApplicationEmail, status: "queu
     p_error_code: values.failure?.code ?? null,
     p_error_message: values.failure?.message ?? null,
     p_next_attempt_at: values.nextAttemptAt ?? null,
+    p_provider_accepted_at: values.providerAcceptedAt ?? null,
   });
   if (error || !data) throw failure("delivery_state_update_failed", "Az e-mail-kézbesítés állapota nem frissíthető.", true);
 }
@@ -162,22 +152,14 @@ async function completeDelivery(delivery: ClaimedApplicationEmail, status: "queu
 export async function enqueueApplicationEmails(applicationId: string, companyId: string, applicantEmail: string) {
   const supabase = createServiceSupabaseClient();
   const adminEmail = normalizeNotificationEmail(env.applicationNotificationAdminEmail);
-  const now = new Date().toISOString();
-  const roles: ApplicationEmailRole[] = ["applicant", "admin", "partner"];
-  const { error } = await supabase.from("email_logs").upsert(roles.map((role) => ({
-    application_id: applicationId,
-    company_id: companyId,
-    provider: "resend",
-    from_email: getEmailFromAddress(),
-    to_email: role === "applicant" ? applicantEmail : role === "admin" ? adminEmail : null,
-    subject: "Jelentkezési e-mail előkészítése",
-    template_key: roleTemplate[role],
-    delivery_key: deliveryKey(applicationId, role),
-    recipient_role: role,
-    status: "queued" as const,
-    next_attempt_at: now,
-  })), { onConflict: "delivery_key", ignoreDuplicates: true });
-  if (error) throw new Error("application_email_queue_failed");
+  const { data, error } = await supabase.rpc("enqueue_application_email_deliveries", {
+    p_application_id: applicationId,
+    p_company_id: companyId,
+    p_applicant_email: applicantEmail,
+    p_admin_email: adminEmail,
+    p_from_email: getEmailFromAddress(),
+  });
+  if (error || data !== true) throw new Error("application_email_queue_failed");
 }
 
 export async function processDueApplicationEmails(options: { applicationId?: string; limit?: number } = {}) {
@@ -187,6 +169,8 @@ export async function processDueApplicationEmails(options: { applicationId?: str
     p_worker_id: workerId,
     p_limit: options.limit ?? 20,
     p_application_id: options.applicationId ?? null,
+    p_admin_email: normalizeNotificationEmail(env.applicationNotificationAdminEmail),
+    p_from_email: getEmailFromAddress(),
   });
   if (error) throw new Error("application_email_claim_failed");
   const deliveries: ClaimedApplicationEmail[] = (data ?? []).map((item) => ({
@@ -196,25 +180,26 @@ export async function processDueApplicationEmails(options: { applicationId?: str
     deliveryKey: item.delivery_key,
     attemptCount: item.attempt_count,
     workerId: item.worker_id,
+    providerUncertainSince: item.provider_uncertain_since,
   }));
   if (!deliveries.length) return [];
   return processClaimedApplicationEmails(deliveries, {
     prepare: prepareApplicationEmail,
-    send: async (message) => {
+    send: async (delivery, message) => {
       if (!env.resendApiKey) throw new ApplicationEmailFailure({ code: "resend_not_configured", message: "Az e-mail-szolgáltató nincs konfigurálva.", retryable: true });
-      const { data: sent, error: sendError } = await createResendClient().emails.send({
+      const { data: sent, error: sendError } = await sendIdempotentEmail({
         from: getEmailFromAddress(),
         to: message.recipient,
         replyTo: message.replyTo,
         subject: message.subject,
         text: message.text,
         html: message.html,
-      });
+      }, delivery.deliveryKey);
       if (sendError) throw new ApplicationEmailFailure(resendFailure(sendError));
       return { messageId: sent?.id ?? null };
     },
     markSent: (delivery, messageId) => completeDelivery(delivery, "sent", { messageId }),
-    scheduleRetry: (delivery, retryFailure, nextAttemptAt) => completeDelivery(delivery, "queued", { failure: retryFailure, nextAttemptAt }),
+    scheduleRetry: (delivery, retryFailure, nextAttemptAt, providerAcceptedAt) => completeDelivery(delivery, "queued", { failure: retryFailure, nextAttemptAt, providerAcceptedAt }),
     markFailed: (delivery, finalFailure) => completeDelivery(delivery, "failed", { failure: finalFailure }),
   });
 }

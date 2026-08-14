@@ -2,7 +2,9 @@
 
 Az alkalmazás a sikeresen elmentett jelentkezés után három, egymástól független sort hoz létre az `email_logs` táblában: jelentkező, admin és partner. Az első küldési kísérlet az API-kérésben indul, de hibája nem változtatja meg a jelentkezés sikeres HTTP-válaszát.
 
-Az újrapróbálási rend: 5 perc, 30 perc, majd 2 óra. A kezdeti kísérlettel együtt legfeljebb négy Resend-hívás történhet. A `delivery_key` minden próbálkozásnál változatlan; az adatbázis egyedi indexe és az atomi claim védi a párhuzamos, ismételt küldéstől. A projektben rögzített Resend SDK (4.0.1) nem támogat idempotency-key opciót, ezért szolgáltatói kulcsot a kód nem állít be.
+Az újrapróbálási rend: az első hiba után 5 perc, a második után 30 perc. Egy értesítéshez legfeljebb három automatikus kísérlet tartozik. A `delivery_key` minden próbálkozásnál változatlan; az adatbázis részleges egyedi indexe és az atomi claim védi a párhuzamos feldolgozástól. Ugyanez a kulcs kerül a Resend `Idempotency-Key` fejlécébe, ezért a szolgáltatói siker utáni adatbázishiba újrapróbálása sem küld újabb példányt.
+
+A jelentkezés már a saját tartós sorában rögzíti az e-mail-kézbesítési igényt. Ha a kezdeti queue-létrehozás hibázik, a következő worker-futás ebből újra létrehozza a hiányzó címzetti sorokat.
 
 ## Production aktiválás – külön jóváhagyással
 
