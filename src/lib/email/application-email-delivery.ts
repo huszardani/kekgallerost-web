@@ -1,5 +1,5 @@
-export const MAX_APPLICATION_EMAIL_ATTEMPTS = 4;
-export const APPLICATION_EMAIL_RETRY_DELAYS_MS = [5 * 60_000, 30 * 60_000, 2 * 60 * 60_000] as const;
+export const MAX_APPLICATION_EMAIL_ATTEMPTS = 3;
+export const APPLICATION_EMAIL_RETRY_DELAYS_MS = [5 * 60_000, 30 * 60_000] as const;
 
 export type ApplicationEmailRole = "applicant" | "admin" | "partner";
 
@@ -37,7 +37,7 @@ export class ApplicationEmailFailure extends Error {
 
 export type ApplicationEmailDeliveryDependencies = {
   prepare: (delivery: ClaimedApplicationEmail) => Promise<PreparedApplicationEmail>;
-  send: (message: PreparedApplicationEmail) => Promise<{ messageId: string | null }>;
+  send: (delivery: ClaimedApplicationEmail, message: PreparedApplicationEmail) => Promise<{ messageId: string | null }>;
   markSent: (delivery: ClaimedApplicationEmail, messageId: string | null) => Promise<void>;
   scheduleRetry: (delivery: ClaimedApplicationEmail, failure: SafeDeliveryFailure, nextAttemptAt: string) => Promise<void>;
   markFailed: (delivery: ClaimedApplicationEmail, failure: SafeDeliveryFailure) => Promise<void>;
@@ -64,7 +64,7 @@ export async function processClaimedApplicationEmail(
 ) {
   try {
     const message = await dependencies.prepare(delivery);
-    const result = await dependencies.send(message);
+    const result = await dependencies.send(delivery, message);
     await dependencies.markSent(delivery, result.messageId);
     return { status: "sent" as const, role: delivery.role };
   } catch (error) {

@@ -2,6 +2,7 @@ import type { ApplicationEmailRole } from "@/lib/email/application-email-deliver
 
 export type ApplicationEmailStatusRow = {
   id: string;
+  to_email: string | null;
   template_key: string | null;
   recipient_role: ApplicationEmailRole | null;
   status: "queued" | "sent" | "failed";
@@ -10,6 +11,7 @@ export type ApplicationEmailStatusRow = {
   next_attempt_at: string | null;
   error_code: string | null;
   error_message: string | null;
+  sent_at: string | null;
 };
 
 const roles: ApplicationEmailRole[] = ["applicant", "partner", "admin"];

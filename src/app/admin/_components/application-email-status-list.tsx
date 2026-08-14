@@ -11,11 +11,13 @@ export function ApplicationEmailStatusList({ emails }: { emails: ApplicationEmai
       return <div className="admin-list-row" key={role}>
         <span>
           <strong>{label}: {status}</strong>
+          <small>Címzett: {email?.to_email ?? "—"}</small>
           <small>Próbálkozások: {email?.attempt_count ?? 0}</small>
           {safeError ? <small>{safeError}</small> : null}
         </span>
         <span>
-          <small>Utolsó: {email?.last_attempt_at ? formatDateTime(email.last_attempt_at) : "—"}</small>
+          <small>Elküldve: {email?.sent_at ? formatDateTime(email.sent_at) : "—"}</small>
+          <small>Utolsó próbálkozás: {email?.last_attempt_at ? formatDateTime(email.last_attempt_at) : "—"}</small>
           <small>Következő: {email?.next_attempt_at ? formatDateTime(email.next_attempt_at) : "—"}</small>
         </span>
       </div>;

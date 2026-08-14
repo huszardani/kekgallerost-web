@@ -228,6 +228,7 @@ type ApplicationRow = {
   consent_accepted: boolean;
   consent_privacy: boolean;
   privacy_accepted_at: string | null;
+  email_delivery_requested_at: string | null;
   viewed_at: string | null;
   source: string;
   submitted_at: string;
@@ -385,7 +386,8 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       activate_scheduled_jobs: { Args: Record<PropertyKey, never>; Returns: number };
-      claim_due_application_email_deliveries: { Args: { p_worker_id: string; p_limit?: number; p_application_id?: string | null }; Returns: Array<{ id: string; application_id: string; company_id: string | null; recipient_role: "applicant" | "admin" | "partner"; delivery_key: string; attempt_count: number; worker_id: string }> };
+      enqueue_application_email_deliveries: { Args: { p_application_id: string; p_company_id: string; p_applicant_email: string; p_admin_email: string | null; p_from_email: string }; Returns: boolean };
+      claim_due_application_email_deliveries: { Args: { p_worker_id: string; p_limit?: number; p_application_id?: string | null; p_admin_email?: string | null; p_from_email?: string }; Returns: Array<{ id: string; application_id: string; company_id: string | null; recipient_role: "applicant" | "admin" | "partner"; delivery_key: string; attempt_count: number; worker_id: string }> };
       complete_application_email_delivery: {
         Args: { p_email_log_id: string; p_worker_id: string; p_status: "queued" | "sent" | "failed"; p_provider_message_id?: string | null; p_error_code?: string | null; p_error_message?: string | null; p_next_attempt_at?: string | null };
         Returns: boolean;

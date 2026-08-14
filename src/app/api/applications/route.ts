@@ -119,7 +119,7 @@ export async function POST(request: Request) {
     job_id: job.id, applicant_name: applicantName, applicant_email: applicantEmail, applicant_phone: applicantPhone,
     candidate_name: applicantName, candidate_email: applicantEmail, candidate_phone: applicantPhone, message: applicationNote,
     status: disqualified ? "not_qualified" : "new", source: "website", consent_accepted: true,
-    consent_privacy: true, privacy_accepted_at: now
+    consent_privacy: true, privacy_accepted_at: now, email_delivery_requested_at: now
   }).select("id").single();
   if (applicationError || !application) return NextResponse.json({ error: "A jelentkezés nem menthető. Kérjük, próbáld újra." }, { status: 500 });
 
