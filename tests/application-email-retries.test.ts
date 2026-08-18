@@ -24,6 +24,12 @@ const message: PreparedApplicationEmail = {
   replyTo: "applicant@example.test",
 };
 
+function normalizedSqlHash(value: string) {
+  return createHash("sha256")
+    .update(value.replace(/\r\n?/g, "\n"))
+    .digest("hex");
+}
+
 function claimed(role: "applicant" | "admin" | "partner", attemptCount = 1): ClaimedApplicationEmail {
   return {
     id: `${role}-log`,
@@ -134,7 +140,7 @@ test("a korábbi migráció változatlan, az új queue-helyreállítás külön 
   const originalSql = await readFile(new URL("../supabase/migrations/202608110001_application_email_delivery_retries.sql", import.meta.url), "utf8");
   const sql = await readFile(new URL("../supabase/migrations/202608140001_application_email_delivery_retry_hardening.sql", import.meta.url), "utf8");
   const cronDefinition = sql.indexOf("create or replace function public.configure_application_email_retry_cron()");
-  assert.equal(createHash("sha256").update(originalSql).digest("hex"), "e91f857dd43b1d09a1b2e3e93605e96da61a378fa4431e3cbfb01616f540f650");
+  assert.equal(normalizedSqlHash(originalSql), "e91f857dd43b1d09a1b2e3e93605e96da61a378fa4431e3cbfb01616f540f650");
   assert.match(originalSql, /attempt_count between 0 and 4/);
   assert.match(originalSql, /attempt_number between 1 and 4/);
   assert.doesNotMatch(originalSql, /email_delivery_requested_at|enqueue_application_email_deliveries/);
@@ -277,4 +283,23 @@ test("az admin egyértelműen látja a kézi ellenőrzést igénylő kézbesít�
   }]);
   assert.equal(applicant.status, "kézi ellenőrzés");
   assert.match(applicant.safeError ?? "", /Kézi ellenőrzés szükséges/);
+});
+
+test("claim conflict hotfix preserves the contract and avoids an ambiguous conflict target", async () => {
+  const originalSql = await readFile(new URL("../supabase/migrations/202608110001_application_email_delivery_retries.sql", import.meta.url), "utf8");
+  const hardeningSql = await readFile(new URL("../supabase/migrations/202608140001_application_email_delivery_retry_hardening.sql", import.meta.url), "utf8");
+  const hotfixSql = await readFile(new URL("../supabase/migrations/202608180001_application_email_claim_conflict_fix.sql", import.meta.url), "utf8");
+  assert.equal(normalizedSqlHash(originalSql), "e91f857dd43b1d09a1b2e3e93605e96da61a378fa4431e3cbfb01616f540f650");
+  assert.equal(normalizedSqlHash(hardeningSql), "502ece54e0454a401a78d9cc1f5eeacfb278541956441dce7de31c51ad5ebb75");
+  assert.match(hotfixSql, /create or replace function public\.claim_due_application_email_deliveries/);
+  assert.match(hotfixSql, /p_worker_id uuid,[\s\S]*?p_limit integer default 20,[\s\S]*?p_application_id uuid default null,[\s\S]*?p_admin_email text default null,[\s\S]*?p_from_email text default ''/);
+  assert.match(hotfixSql, /returns table \([\s\S]*?id uuid,[\s\S]*?application_id uuid,[\s\S]*?company_id uuid,[\s\S]*?recipient_role text,[\s\S]*?delivery_key text,[\s\S]*?attempt_count integer,[\s\S]*?worker_id uuid,[\s\S]*?provider_uncertain_since timestamptz/);
+  assert.match(hotfixSql, /on conflict do nothing/);
+  assert.doesNotMatch(hotfixSql, /on conflict \(delivery_key\) where delivery_key is not null do nothing/);
+  assert.match(hotfixSql, /and not exists \([\s\S]*?existing\.delivery_key/);
+  assert.match(hotfixSql, /logs\.attempt_count < 3/);
+  assert.match(hotfixSql, /manual_review_required/);
+  assert.match(hotfixSql, /for update of logs skip locked/);
+  assert.match(hotfixSql, /revoke all on function public\.claim_due_application_email_deliveries\(uuid, integer, uuid, text, text\) from public/);
+  assert.match(hotfixSql, /grant execute on function public\.claim_due_application_email_deliveries\(uuid, integer, uuid, text, text\) to service_role/);
 });
