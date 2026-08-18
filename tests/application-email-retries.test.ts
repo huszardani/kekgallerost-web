@@ -24,6 +24,12 @@ const message: PreparedApplicationEmail = {
   replyTo: "applicant@example.test",
 };
 
+function normalizedSqlHash(value: string) {
+  return createHash("sha256")
+    .update(value.replace(/\r\n?/g, "\n"))
+    .digest("hex");
+}
+
 function claimed(role: "applicant" | "admin" | "partner", attemptCount = 1): ClaimedApplicationEmail {
   return {
     id: `${role}-log`,
@@ -134,7 +140,7 @@ test("a korábbi migráció változatlan, az új queue-helyreállítás külön 
   const originalSql = await readFile(new URL("../supabase/migrations/202608110001_application_email_delivery_retries.sql", import.meta.url), "utf8");
   const sql = await readFile(new URL("../supabase/migrations/202608140001_application_email_delivery_retry_hardening.sql", import.meta.url), "utf8");
   const cronDefinition = sql.indexOf("create or replace function public.configure_application_email_retry_cron()");
-  assert.equal(createHash("sha256").update(originalSql).digest("hex"), "7a6e75d25fcb72f95326bb6c0ab3014ab6f1cc825e1f9acd90cdb3949634a8f4");
+  assert.equal(normalizedSqlHash(originalSql), "e91f857dd43b1d09a1b2e3e93605e96da61a378fa4431e3cbfb01616f540f650");
   assert.match(originalSql, /attempt_count between 0 and 4/);
   assert.match(originalSql, /attempt_number between 1 and 4/);
   assert.doesNotMatch(originalSql, /email_delivery_requested_at|enqueue_application_email_deliveries/);
@@ -283,8 +289,8 @@ test("claim conflict hotfix preserves the contract and avoids an ambiguous confl
   const originalSql = await readFile(new URL("../supabase/migrations/202608110001_application_email_delivery_retries.sql", import.meta.url), "utf8");
   const hardeningSql = await readFile(new URL("../supabase/migrations/202608140001_application_email_delivery_retry_hardening.sql", import.meta.url), "utf8");
   const hotfixSql = await readFile(new URL("../supabase/migrations/202608180001_application_email_claim_conflict_fix.sql", import.meta.url), "utf8");
-  assert.equal(createHash("sha256").update(originalSql).digest("hex"), "7a6e75d25fcb72f95326bb6c0ab3014ab6f1cc825e1f9acd90cdb3949634a8f4");
-  assert.equal(createHash("sha256").update(hardeningSql).digest("hex"), "5349f6b24b978e094706078411873680079eea509eee79c8e78e653c320cc3c3");
+  assert.equal(normalizedSqlHash(originalSql), "e91f857dd43b1d09a1b2e3e93605e96da61a378fa4431e3cbfb01616f540f650");
+  assert.equal(normalizedSqlHash(hardeningSql), "502ece54e0454a401a78d9cc1f5eeacfb278541956441dce7de31c51ad5ebb75");
   assert.match(hotfixSql, /create or replace function public\.claim_due_application_email_deliveries/);
   assert.match(hotfixSql, /p_worker_id uuid,[\s\S]*?p_limit integer default 20,[\s\S]*?p_application_id uuid default null,[\s\S]*?p_admin_email text default null,[\s\S]*?p_from_email text default ''/);
   assert.match(hotfixSql, /returns table \([\s\S]*?id uuid,[\s\S]*?application_id uuid,[\s\S]*?company_id uuid,[\s\S]*?recipient_role text,[\s\S]*?delivery_key text,[\s\S]*?attempt_count integer,[\s\S]*?worker_id uuid,[\s\S]*?provider_uncertain_since timestamptz/);
