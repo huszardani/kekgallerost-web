@@ -10,5 +10,6 @@ export const env = {
   emailTestToken: process.env.EMAIL_TEST_TOKEN,
   emailTestTo: process.env.EMAIL_TEST_TO,
   applicationNotificationAdminEmail: process.env.APPLICATION_NOTIFICATION_ADMIN_EMAIL,
+  applicationEmailRetrySecret: process.env.APPLICATION_EMAIL_RETRY_SECRET,
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://kekgallerost.hu"
 };

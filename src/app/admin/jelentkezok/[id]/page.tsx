@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/app/admin/_components/ui";
+import { ApplicationEmailStatusList } from "@/app/admin/_components/application-email-status-list";
 import { addApplicationNoteAction, updateApplicationStatusAction } from "@/app/admin/crm-actions";
 import { deleteApplicationAction } from "@/app/admin/privacy-actions";
 import { applicationStatuses, formatDateTime } from "@/lib/recruitment";
@@ -49,7 +50,8 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
       </div>
       <aside>
         <section className="admin-card admin-form-section no-print"><div className="admin-form-section-header"><h3>CRM-státusz</h3><p>A változás az aktivitási idővonalon is megjelenik.</p></div><form action={updateApplicationStatusAction}><input name="application_id" type="hidden" value={application.id} /><label className="admin-field">Aktuális státusz<select className="admin-select" defaultValue={application.status} name="status">{applicationStatuses.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><div className="admin-form-footer"><button className="admin-button" type="submit">Státusz mentése</button></div></form></section>
-        <section className="admin-card admin-form-section"><div className="admin-form-section-header"><h3>Aktivitási idővonal</h3><p>Státuszváltások és automatikus e-mail-kézbesítés.</p></div>{activity.map((item) => <div className="admin-list-row" key={item.id}><span><strong>Státuszváltozás</strong><small>{item.previous_value ?? "—"} → {item.new_value ?? "—"}</small></span><small>{formatDateTime(item.created_at)}</small></div>)}{emails.map((email) => <div className="admin-list-row" key={email.id}><span><strong>Visszaigazoló e-mail: {email.status === "sent" ? "elküldve" : email.status === "failed" ? "sikertelen" : "sorban"}</strong><small>{email.to_email}</small></span><small>{formatDateTime(email.sent_at ?? email.created_at)}</small></div>)}{activity.length === 0 && emails.length === 0 ? <div className="admin-empty">Nincs naplózott aktivitás.</div> : null}</section>
+        <ApplicationEmailStatusList emails={emails} />
+        <section className="admin-card admin-form-section"><div className="admin-form-section-header"><h3>Aktivitási idővonal</h3><p>Státuszváltások és automatikus e-mail-kézbesítés.</p></div>{activity.map((item) => <div className="admin-list-row" key={item.id}><span><strong>Státuszváltozás</strong><small>{item.previous_value ?? "—"} → {item.new_value ?? "—"}</small></span><small>{formatDateTime(item.created_at)}</small></div>)}{activity.length === 0 ? <div className="admin-empty">Nincs naplózott aktivitás.</div> : null}</section>
         <details className="admin-card admin-form-section no-print"><summary style={{ color: "var(--admin-red)", cursor: "pointer", fontWeight: 800 }}>Adatvédelmi törlés</summary><form action={deleteApplicationAction} style={{ marginTop: 16 }}><input name="application_id" type="hidden" value={application.id} /><p style={{ color: "var(--admin-muted)", fontSize: 13, lineHeight: 1.6 }}>Ez véglegesen törli a jelentkezőt, a válaszokat, jegyzeteket és feltöltött dokumentumokat. Írd be: <strong>TÖRLÉS</strong></p><label className="admin-field">Megerősítés<input className="admin-input" name="confirmation" required /></label><div className="admin-form-footer"><button className="admin-button danger" type="submit">Jelentkező végleges törlése</button></div></form></details>
       </aside>
     </div>

@@ -228,6 +228,8 @@ type ApplicationRow = {
   consent_accepted: boolean;
   consent_privacy: boolean;
   privacy_accepted_at: string | null;
+  email_delivery_requested_at: string | null;
+  email_delivery_recovery_completed_at: string | null;
   viewed_at: string | null;
   source: string;
   submitted_at: string;
@@ -267,14 +269,34 @@ type EmailLogRow = {
   provider: string;
   provider_message_id: string | null;
   from_email: string;
-  to_email: string;
+  to_email: string | null;
   subject: string;
   template_key: string | null;
   delivery_key: string | null;
+  recipient_role: "applicant" | "admin" | "partner" | null;
   status: "queued" | "sent" | "failed";
+  attempt_count: number;
+  last_attempt_at: string | null;
+  next_attempt_at: string | null;
+  locked_at: string | null;
+  locked_by: string | null;
+  error_code: string | null;
   error_message: string | null;
   sent_at: string | null;
+  provider_accepted_at: string | null;
   created_at: string;
+};
+
+type EmailDeliveryAttemptRow = {
+  id: string;
+  email_log_id: string;
+  attempt_number: number;
+  status: "started" | "sent" | "retry_scheduled" | "failed";
+  attempted_at: string;
+  completed_at: string | null;
+  provider_message_id: string | null;
+  error_code: string | null;
+  error_message: string | null;
 };
 
 type ApplicationNoteRow = {
@@ -357,7 +379,8 @@ export type Database = {
       applications: TableDefinition<ApplicationRow, Partial<Omit<ApplicationRow, "id" | "created_at" | "updated_at" | "submitted_at">> & Pick<ApplicationRow, "job_id" | "applicant_name" | "applicant_email" | "candidate_name" | "candidate_email">>;
       application_answers: TableDefinition<ApplicationAnswerRow, Partial<Omit<ApplicationAnswerRow, "id" | "created_at">> & Pick<ApplicationAnswerRow, "application_id" | "question_label_snapshot">>;
       uploaded_files: TableDefinition<UploadedFileRow, Partial<Omit<UploadedFileRow, "id" | "created_at">> & Pick<UploadedFileRow, "application_id" | "storage_bucket" | "storage_path" | "original_filename" | "bucket" | "path">>;
-      email_logs: TableDefinition<EmailLogRow, Partial<Omit<EmailLogRow, "id" | "created_at">> & Pick<EmailLogRow, "to_email" | "subject">>;
+      email_logs: TableDefinition<EmailLogRow, Partial<Omit<EmailLogRow, "id" | "created_at">> & Pick<EmailLogRow, "subject">>;
+      email_delivery_attempts: TableDefinition<EmailDeliveryAttemptRow, Partial<Omit<EmailDeliveryAttemptRow, "id" | "attempted_at">> & Pick<EmailDeliveryAttemptRow, "email_log_id" | "attempt_number" | "status">>;
       application_notes: TableDefinition<ApplicationNoteRow, Partial<Omit<ApplicationNoteRow, "id" | "created_at" | "updated_at">> & Pick<ApplicationNoteRow, "application_id" | "content">>;
       activity_logs: TableDefinition<ActivityLogRow, Partial<Omit<ActivityLogRow, "id" | "created_at">> & Pick<ActivityLogRow, "entity_type" | "entity_id" | "action">>;
       email_templates: TableDefinition<EmailTemplateRow, Partial<Omit<EmailTemplateRow, "created_at" | "updated_at">> & Pick<EmailTemplateRow, "id" | "subject" | "intro_text" | "next_step_text" | "contact_details" | "signature">>;
@@ -365,6 +388,13 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       activate_scheduled_jobs: { Args: Record<PropertyKey, never>; Returns: number };
+      enqueue_application_email_deliveries: { Args: { p_application_id: string; p_company_id: string; p_applicant_email: string; p_admin_email: string | null; p_from_email: string }; Returns: boolean };
+      claim_due_application_email_deliveries: { Args: { p_worker_id: string; p_limit?: number; p_application_id?: string | null; p_admin_email?: string | null; p_from_email?: string }; Returns: Array<{ id: string; application_id: string; company_id: string | null; recipient_role: "applicant" | "admin" | "partner"; delivery_key: string; attempt_count: number; worker_id: string; provider_uncertain_since: string | null }> };
+      complete_application_email_delivery: {
+        Args: { p_email_log_id: string; p_worker_id: string; p_status: "queued" | "sent" | "failed"; p_provider_message_id?: string | null; p_error_code?: string | null; p_error_message?: string | null; p_next_attempt_at?: string | null; p_provider_accepted_at?: string | null };
+        Returns: boolean;
+      };
+      configure_application_email_retry_cron: { Args: Record<PropertyKey, never>; Returns: number };
       current_user_company_id: { Args: Record<PropertyKey, never>; Returns: string | null };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_partner_for_company: { Args: { target_company_id: string }; Returns: boolean };
