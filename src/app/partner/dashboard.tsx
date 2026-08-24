@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { signOutAction } from "@/app/auth/actions";
 import { updateApplicationAction } from "@/app/partner/actions";
-import { applicationStatusLabel, applicationStatuses } from "@/lib/applications";
+import { applicationStatusLabel } from "@/lib/applications";
 import { requireRole } from "@/lib/auth";
+import { isPartnerApplicationStatus, partnerApplicationStatuses } from "@/lib/partner-applications";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 function toBudapestInput(value: string | null) {
@@ -121,7 +122,11 @@ export default async function PartnerDashboard() {
 
                       <form action={updateApplicationAction} className="form-grid application-update-form">
                         <input name="application_id" type="hidden" value={application.id} />
-                        <label>Státusz<select defaultValue={application.status} name="status">{applicationStatuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
+                        {isPartnerApplicationStatus(application.status) ? (
+                          <label>Státusz<select defaultValue={application.status} name="status">{partnerApplicationStatuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
+                        ) : (
+                          <div className="form-field"><span>Státusz</span><strong>{applicationStatusLabel(application.status)}</strong><small className="muted-text">Ez a státusz partnerként nem módosítható.</small></div>
+                        )}
                         <label>Visszahívás (budapesti idő)<input defaultValue={toBudapestInput(application.callback_at)} name="callback_at" type="datetime-local" /></label>
                         <label>Utolsó kapcsolat (budapesti idő)<input defaultValue={toBudapestInput(application.last_contacted_at)} name="last_contacted_at" type="datetime-local" /></label>
                         <label className="full-field">Partner megjegyzés<textarea defaultValue={application.partner_note ?? ""} name="partner_note" rows={4} /></label>
