@@ -14,7 +14,8 @@ export async function GET() {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: isSet(env.supabaseAnonKey),
     SUPABASE_SERVICE_ROLE_KEY: isSet(env.supabaseServiceRoleKey),
     RESEND_API_KEY: isSet(env.resendApiKey),
-    EMAIL_FROM: isSet(env.emailFrom),
+    RESEND_FROM_EMAIL: isSet(env.resendFromEmail),
+    COMPANY_LEAD_NOTIFICATION_EMAIL: isSet(env.companyLeadNotificationEmail),
     NEXT_PUBLIC_SITE_URL: isSet(env.siteUrl)
   };
 
@@ -53,7 +54,8 @@ export async function GET() {
         },
         resend: {
           configured: envStatus.RESEND_API_KEY,
-          fromConfigured: envStatus.EMAIL_FROM
+          fromConfigured: envStatus.RESEND_FROM_EMAIL,
+          companyLeadRecipientConfigured: envStatus.COMPANY_LEAD_NOTIFICATION_EMAIL
         }
       }
     },
